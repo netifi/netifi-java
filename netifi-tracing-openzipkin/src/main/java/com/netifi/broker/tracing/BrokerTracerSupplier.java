@@ -31,7 +31,8 @@ public class BrokerTracerSupplier implements Supplier<Tracer> {
 
   @Inject
   public BrokerTracerSupplier(BrokerClient brokerClient, Optional<String> tracingGroup) {
-    BrokerSocket brokerSocket = brokerClient.group(tracingGroup.orElse("com.netifi.tracing"));
+    BrokerSocket brokerSocket =
+        brokerClient.group(tracingGroup.orElse("com.netifi.broker.tracing"));
 
     BrokerTracingServiceClient brokerTracingServiceClient =
         new BrokerTracingServiceClient(brokerSocket);

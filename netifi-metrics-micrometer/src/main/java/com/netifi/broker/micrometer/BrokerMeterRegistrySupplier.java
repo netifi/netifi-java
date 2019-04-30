@@ -42,7 +42,7 @@ public class BrokerMeterRegistrySupplier implements Supplier<MeterRegistry> {
       Optional<Long> stepInMillis,
       Optional<Boolean> export) {
     Objects.requireNonNull(netifi, "must provide a BrokerClient instance");
-    BrokerSocket brokerSocket = netifi.groupServiceSocket(metricsGroup.orElse("com.netifi.metrics"), com.netifi.common.tags.Tags
+    BrokerSocket brokerSocket = netifi.groupServiceSocket(metricsGroup.orElse("com.netifi.broker.metrics"), com.netifi.common.tags.Tags
         .empty());
 
     MetricsSnapshotHandlerClient client = new MetricsSnapshotHandlerClient(brokerSocket);

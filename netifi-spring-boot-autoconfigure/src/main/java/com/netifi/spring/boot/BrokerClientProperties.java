@@ -132,7 +132,7 @@ public class BrokerClientProperties {
 
   public static final class MetricsProperties {
 
-    @NotNull @NotEmpty private String group = "com.netifi.metrics";
+    @NotNull @NotEmpty private String group = "com.netifi.broker.metrics";
 
     private long reportingStepInMillis = 10_000L;
 
@@ -165,7 +165,7 @@ public class BrokerClientProperties {
 
   public static final class TracingProperties {
 
-    @NotNull @NotEmpty private String group = "com.netifi.tracing";
+    @NotNull @NotEmpty private String group = "com.netifi.broker.tracing";
 
     public String getGroup() {
       return group;

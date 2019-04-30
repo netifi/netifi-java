@@ -57,7 +57,7 @@ public class BrokerZipkinHttpBridge implements BrokerTracingService {
   public static void main(String... args) {
     logger.info("Starting Stand-alone Broker Zipkin HTTP Bridge");
 
-    String group = System.getProperty("netifi.tracingGroup", "com.netifi.tracing");
+    String group = System.getProperty("netifi.tracingGroup", "com.netifi.broker.tracing");
     String brokerHost = System.getProperty("netifi.host", "localhost");
     int brokerPort = Integer.getInteger("netifi.port", 8001);
     String zipkinHost = System.getProperty("netifi.zipkinHost", "localhost");
