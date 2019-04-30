@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn">
+    <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %p %c{1.} [%t] %m%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="error" additivity="false">
+            <AppenderRef ref="STDOUT"/>
+        </Root>
+        <logger name="com.netifi" level="DEBUG" additivity="false">
+            <AppenderRef ref="STDOUT"/>
+        </logger>
+        <logger name="com.rsocket.FrameLogger" level="ERROR" additivity="false">
+            <AppenderRef ref="STDOUT"/>
+        </logger>
+        <logger name="com.netifi.broker.prometheus.BrokerPrometheusBridge" level="INFO" additivity="false">
+            <AppenderRef ref="STDOUT"/>
+        </logger>
+    </Loggers>
+</Configuration>

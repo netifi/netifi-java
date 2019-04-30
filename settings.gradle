@@ -1,19 +1,34 @@
-rootProject.name = 'proteus-java'
+pluginManagement {
+    repositories {
+        maven {
+            url 'https://sonatype.netifiinc.com/repository/netifi-plugin-group/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
+    }
+}
 
-include 'proteus-auth'
-include 'proteus-broker-info-idl'
-include 'proteus-broker-mgmt-idl'
-include 'proteus-frames'
-include 'proteus-client'
-include 'proteus-common'
-include 'proteus-discovery'
-include 'proteus-discovery-aws'
-include 'proteus-discovery-consul'
-include 'proteus-discovery-kubernetes'
-include 'proteus-metrics-micrometer'
-include 'proteus-metrics-influx'
-include 'proteus-metrics-prometheus'
-include 'proteus-tracing-openzipkin'
-include 'proteus-tracing-idl'
-include 'proteus-vizceral-idl'
-include 'proteus-bom'
+rootProject.name = 'netifi-java'
+
+include 'netifi-bom'
+include 'netifi-broker-auth'
+include 'netifi-broker-client'
+include 'netifi-broker-frames'
+include 'netifi-broker-info-idl'
+include 'netifi-broker-mgmt-idl'
+include 'netifi-common'
+include 'netifi-discovery'
+include 'netifi-discovery-aws'
+include 'netifi-discovery-consul'
+include 'netifi-discovery-kubernetes'
+include 'netifi-metrics-influx'
+include 'netifi-metrics-micrometer'
+include 'netifi-metrics-prometheus'
+include 'netifi-tracing-idl'
+include 'netifi-tracing-openzipkin'
+include 'netifi-vizceral-idl'
+include 'netifi-spring-core'
+include 'netifi-spring-boot-starter'
+include 'netifi-spring-boot-autoconfigure'
