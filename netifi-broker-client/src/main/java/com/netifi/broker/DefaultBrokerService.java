@@ -170,7 +170,8 @@ public class DefaultBrokerService implements BrokerService, Disposable {
       useDiscoveryStrategy();
     }
 
-    this.client = new BrokerInfoServiceClient(group("com.netifi.brokerServices", Tags.empty()));
+    this.client =
+        new BrokerInfoServiceClient(group("com.netifi.broker.brokerServices", Tags.empty()));
     this.disposable = listenToBrokerEvents().subscribe();
 
     onClose

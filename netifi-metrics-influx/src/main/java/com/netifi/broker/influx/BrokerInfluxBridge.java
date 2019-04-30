@@ -54,7 +54,7 @@ public class BrokerInfluxBridge implements MetricsSnapshotHandler {
   public static void main(String... args) {
     logger.info("Starting Stand-alone BrokerClient Influx Bridge");
 
-    String group = System.getProperty("netifi.metricsGroup", "com.netifi.metrics");
+    String group = System.getProperty("netifi.metricsGroup", "com.netifi.broker.metrics");
     String brokerHost = System.getProperty("netifi.host", "localhost");
     int brokerPort = Integer.getInteger("netifi.port", 8001);
 
