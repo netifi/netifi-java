@@ -1,0 +1,5 @@
+# This is a Gradle generated file for dependency locking.
+# Manual edits can break the build and are not advised.
+# This file is expected to be part of source control.
+org.springframework.boot:spring-boot-autoconfigure-processor:2.1.4.RELEASE
+org.springframework.boot:spring-boot-configuration-processor:2.1.4.RELEASE
