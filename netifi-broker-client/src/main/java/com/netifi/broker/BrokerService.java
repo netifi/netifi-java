@@ -15,14 +15,61 @@
  */
 package com.netifi.broker;
 
+import com.netifi.broker.frames.BroadcastFlyweight;
+import com.netifi.broker.frames.GroupFlyweight;
+import com.netifi.broker.frames.ShardFlyweight;
 import com.netifi.broker.rsocket.BrokerSocket;
+import com.netifi.broker.rsocket.DefaultBrokerSocket;
 import com.netifi.common.tags.Tags;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.rsocket.Payload;
+import io.rsocket.RSocket;
+import io.rsocket.util.ByteBufPayload;
 
 interface BrokerService {
-  BrokerSocket group(CharSequence group, Tags tags);
+  default BrokerSocket group(CharSequence group, Tags tags) {
+    return new DefaultBrokerSocket(
+        payload -> {
+          ByteBuf data = payload.sliceData().retain();
+          ByteBuf metadataToWrap = payload.sliceMetadata();
+          ByteBuf metadata =
+              GroupFlyweight.encode(ByteBufAllocator.DEFAULT, group, metadataToWrap, tags);
+          Payload wrappedPayload = ByteBufPayload.create(data, metadata);
+          payload.release();
+          return wrappedPayload;
+        },
+        this::selectRSocket);
+  }
 
-  BrokerSocket broadcast(CharSequence group, Tags tags);
+  default BrokerSocket broadcast(CharSequence group, Tags tags) {
+    return new DefaultBrokerSocket(
+        payload -> {
+          ByteBuf data = payload.sliceData().retain();
+          ByteBuf metadataToWrap = payload.sliceMetadata();
+          ByteBuf metadata =
+              BroadcastFlyweight.encode(ByteBufAllocator.DEFAULT, group, metadataToWrap, tags);
+          Payload wrappedPayload = ByteBufPayload.create(data, metadata);
+          payload.release();
+          return wrappedPayload;
+        },
+        this::selectRSocket);
+  }
 
-  BrokerSocket shard(CharSequence group, ByteBuf shardKey, Tags tags);
+  default BrokerSocket shard(CharSequence group, ByteBuf shardKey, Tags tags) {
+    return new DefaultBrokerSocket(
+        payload -> {
+          ByteBuf data = payload.sliceData().retain();
+          ByteBuf metadataToWrap = payload.sliceMetadata();
+          ByteBuf metadata =
+              ShardFlyweight.encode(
+                  ByteBufAllocator.DEFAULT, group, metadataToWrap, shardKey, tags);
+          Payload wrappedPayload = ByteBufPayload.create(data, metadata);
+          payload.release();
+          return wrappedPayload;
+        },
+        this::selectRSocket);
+  }
+
+  RSocket selectRSocket();
 }
