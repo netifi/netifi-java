@@ -2,16 +2,6 @@ buildscript {
     configurations.classpath {
         resolutionStrategy.activateDependencyLocking()
     }
-    
-    repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-    dependencies {
-        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4"
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.8.1"
-    }
 }
 
 plugins {
@@ -40,8 +30,6 @@ allprojects {
 
 subprojects {
     apply from: "../dependency-management.gradle"
-    apply plugin: 'com.jfrog.bintray'
-    apply plugin: 'com.jfrog.artifactory'
     apply plugin: 'java'
     apply plugin: 'idea'
     apply plugin: 'com.github.sherter.google-java-format'
@@ -55,29 +43,62 @@ subprojects {
     project.version += project.hasProperty('versionSuffix') ? project.property('versionSuffix') : ''
 
     repositories {
-        jcenter()
         maven {
-            url = 'https://artifactory.netifiinc.com/artifactory/libs-release-local'
+            url 'https://sonatype.netifiinc.com/repository/jcenter/'
             credentials {
-                username = project.findProperty('netifiArtifactoryUsername') ?: System.getenv('NETIFI_ARTIFACTORY_USERNAME')
-                password = project.findProperty('netifiArtifactoryPassword') ?: System.getenv('NETIFI_ARTIFACTORY_PASSWORD')
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
             }
         }
         maven {
-            url = 'https://artifactory.netifiinc.com/artifactory/libs-snapshot-local'
+            url 'https://sonatype.netifiinc.com/repository/maven-central/'
             credentials {
-                username = project.findProperty('netifiArtifactoryUsername') ?: System.getenv('NETIFI_ARTIFACTORY_USERNAME')
-                password = project.findProperty('netifiArtifactoryPassword') ?: System.getenv('NETIFI_ARTIFACTORY_PASSWORD')
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
             }
         }
         maven {
-            url  "https://dl.bintray.com/netifi/netifi-oss"
+            url 'https://sonatype.netifiinc.com/repository/netifi-oss/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
         }
-        maven { url 'http://repo.spring.io/libs-snapshot' }
-        maven { url 'https://oss.jfrog.org/oss-snapshot-local' }
-        maven { url 'https://oss.jfrog.org/oss-release-local' }
-        mavenCentral()
-
+        maven {
+            url 'https://sonatype.netifiinc.com/repository/netifi-artifactory-libs-release-local/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
+        maven {
+            url 'https://sonatype.netifiinc.com/repository/netifi-artifactory-libs-snapshot-local/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
+        maven {
+            url 'https://sonatype.netifiinc.com/repository/spring-libs-snapshot/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
+        maven {
+            url 'https://sonatype.netifiinc.com/repository/jcenter-oss-snapshot/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
+        maven {
+            url 'https://sonatype.netifiinc.com/repository/jcenter-oss-release/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
     }
 
     googleJavaFormat {
@@ -114,15 +135,26 @@ subprojects {
                 artifact javadocJar
             }
         }
+        repositories {
+            maven {
+                url ''
+                def releasesRepoUrl = 'https://sonatype.netifiinc.com/repository/netifi-maven-releases/'
+                def snapshotsRepoUrl = 'https://sonatype.netifiinc.com/repository/netifi-maven-snapshots/'
+                url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                credentials {
+                    username = "${netifiPublishUsername}"
+                    password = "${netifiPublishPassword}"
+                }
+            }
+        }
     }
 
     license {
         header rootProject.file('resources/HEADER')
         strictCheck true
-        excludes(["**/*.xml", "**/*.json"])
+        excludes(["**/*.xml", "**/*.json", "**/*.properties"])
     }
     license.mapping('java', 'SLASHSTAR_STYLE')
-}
 
-apply from: "artifactory.gradle"
-apply from: "bintray.gradle"
+    task allDeps(type: DependencyReportTask) {}
+}

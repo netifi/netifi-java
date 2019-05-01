@@ -1,6 +1,6 @@
-# Netifi Proteus Java
+# Netifi Java
 
-[![Join the chat at https://gitter.im/netifi/general](https://badges.gitter.im/netifi/general.svg)](https://gitter.im/netifi/general) <a href='https://travis-ci.org/netifi-proteus/proteus-java'><img src='https://travis-ci.org/netifi-proteus/proteus-java.svg?branch=master'></a>
+[![Join the chat at https://gitter.im/netifi/general](https://badges.gitter.im/netifi/general.svg)](https://gitter.im/netifi/general)
 
 
 ## Build from Source
@@ -9,7 +9,7 @@
         $ ./gradlew clean build
         
 ## Updating Dependencies
-The proteus-java build uses [Dependencies Lock strategy](https://docs.gradle.org/current/userguide/dependency_locking.html)
+The netifi-java build uses [Dependencies Lock strategy](https://docs.gradle.org/current/userguide/dependency_locking.html)
 Which keeps all dependencies versions snapshot in one file. Such a strategy allows avoiding caveats with libs versions and prevent accidental introduction of new dependencies in the project.
 
 In order to update the dependencies versions, it is required to run the project build with 
@@ -22,7 +22,7 @@ additional command as in the following sample
 
 ## Bugs and Feedback
 
-For bugs, questions, and discussions please use the [Github Issues](https://github.com/proteus/proteus-java/issues).
+For bugs, questions, and discussions please use the [Github Issues](https://github.com/netifi/netifi-java/issues).
 
 ## License
 Copyright 2017 [Netifi Inc.](https://www.netifi.com)

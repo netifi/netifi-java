@@ -1,0 +1,4 @@
+# Auto Configure
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.netifi.spring.boot.BrokerClientAutoConfiguration,\
+  com.netifi.spring.core.config.BrokerClientConfiguration

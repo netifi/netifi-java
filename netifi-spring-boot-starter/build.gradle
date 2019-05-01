@@ -1,0 +1,12 @@
+plugins {
+    id 'io.spring.dependency-management'
+}
+
+description = 'Netifi Spring Boot Starter'
+
+dependencies {
+    compile project(':netifi-spring-boot-autoconfigure')
+    compile project(':netifi-spring-core')
+
+    compile 'org.springframework.boot:spring-boot-starter'
+}

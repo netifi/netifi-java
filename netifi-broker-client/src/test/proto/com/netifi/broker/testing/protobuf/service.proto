@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package com.netifi.broker.testing.protobuf;
+
+option java_package = "com.netifi.broker.testing.protobuf";
+option java_outer_classname = "ServiceProto";
+option java_multiple_files = true;
+
+service TestService {
+
+    rpc streamResponse (stream TestRequest) returns (TestResponse) {}
+
+    rpc RequestResponse (TestRequest) returns (TestResponse) {}
+}
+
+message TestRequest {
+    string message = 1;
+}
+
+message TestResponse {
+    string message = 1;
+}
