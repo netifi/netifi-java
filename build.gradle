@@ -133,6 +133,29 @@ subprojects {
                 from components.java
                 artifact sourcesJar
                 artifact javadocJar
+                pom {
+                    name = 'Netifi Java'
+                    description = 'A collection of java libraries for Netifi'
+                    url = 'https://www.netifi.com/'
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'Support'
+                            name = 'Netifi Engineering'
+                            email = 'support@netifi.com'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:git://github.com/netifi/netifi-java.git'
+                        developerConnection = 'scm:git:ssh://github.com/netifi/netifi-java.git'
+                        url = 'http://github.com/netifi/netifi-java/'
+                    }
+                }
             }
         }
         repositories {
