@@ -137,6 +137,10 @@ subprojects {
                     name = 'Netifi Java'
                     description = 'A collection of java libraries for Netifi'
                     url = 'https://www.netifi.com/'
+                    organization {
+                        name = 'Netifi, Inc.'
+                        url = 'https://www.netifi.com'
+                    }
                     licenses {
                         license {
                             name = 'The Apache License, Version 2.0'
@@ -154,6 +158,10 @@ subprojects {
                         connection = 'scm:git:git://github.com/netifi/netifi-java.git'
                         developerConnection = 'scm:git:ssh://github.com/netifi/netifi-java.git'
                         url = 'http://github.com/netifi/netifi-java/'
+                    }
+                    issueManagement {
+                        system = "GitHub Issues"
+                        url = "https://github.com/netifi/netifi-java/issues"
                     }
                 }
             }
