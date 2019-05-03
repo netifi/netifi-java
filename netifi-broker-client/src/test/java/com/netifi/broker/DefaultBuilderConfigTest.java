@@ -24,6 +24,7 @@ import org.junit.Test;
 
 @Ignore // can't reload system properties
 public class DefaultBuilderConfigTest {
+
   @Test
   public void testShouldFindSingleSeedAddress() {
     System.setProperty("netifi.client.seedAddresses", "localhost:8001");

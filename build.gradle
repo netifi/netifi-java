@@ -73,6 +73,9 @@ subprojects {
             }
         }
         maven {
+            url 'https://oss.jfrog.org/artifactory/oss-snapshot-local/'
+        }
+        maven {
             url 'https://sonatype.netifiinc.com/repository/maven-central/'
             credentials {
                 username = "${netifiReadOnlyUsername}"
