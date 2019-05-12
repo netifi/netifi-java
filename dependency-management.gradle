@@ -14,6 +14,7 @@ dependencyManagement {
     dependencies {
         dependency "org.slf4j:slf4j-api:${slf4jVersion}"
         
+        dependency "com.netifi:netifi-transport-shm:${netifiShmVersion}"
         dependency "com.github.davidmoten:rxjava2-jdbc:${rxjava2JdbcVersion}"
         dependency "com.google.guava:guava:${guavaVersion}"
         dependency "com.google.protobuf:protobuf-java-util:${protobufVersion}"

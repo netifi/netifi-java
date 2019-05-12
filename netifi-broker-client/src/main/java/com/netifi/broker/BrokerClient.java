@@ -39,6 +39,16 @@ import io.rsocket.rpc.rsocket.RequestHandlingRSocket;
 import io.rsocket.transport.ClientTransport;
 import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.transport.netty.client.WebsocketClientTransport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import reactor.core.Exceptions;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.MonoProcessor;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
+import reactor.netty.tcp.TcpClient;
+
+import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -48,12 +58,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import reactor.core.Exceptions;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.MonoProcessor;
-import reactor.netty.tcp.TcpClient;
 
 /** This is where the magic happens */
 public class BrokerClient implements Closeable {
@@ -141,6 +145,10 @@ public class BrokerClient implements Closeable {
 
   public static TcpBuilder tcp() {
     return new TcpBuilder();
+  }
+
+  public static ShmBuilder shm() {
+    return new ShmBuilder();
   }
 
   public static CustomizableBuilder customizable() {
@@ -525,6 +533,145 @@ public class BrokerClient implements Closeable {
       logger.info("registering with netifi with group {}", group);
 
       netifiKey = accessKey + group + tags.toString();
+    }
+  }
+
+  public static class ShmBuilder extends CommonBuilder<ShmBuilder> {
+    private File sharedMemoryDirectory;
+    private Scheduler workerScheduler = Schedulers.parallel();
+    private Scheduler heartbeatScheduler = Schedulers.single();
+
+    public ShmBuilder sharedMemoryDirectory(String sharedMemoryDirectory) {
+      this.sharedMemoryDirectory = new File(sharedMemoryDirectory);
+      return this;
+    }
+
+    public ShmBuilder sharedMemoryDirectory(File sharedMemoryDirectory) {
+      this.sharedMemoryDirectory = sharedMemoryDirectory;
+      return this;
+    }
+
+    public ShmBuilder workerScheduler(Scheduler workerScheduler) {
+      this.workerScheduler = workerScheduler;
+      return this;
+    }
+
+    public ShmBuilder heartbeatScheduler(Scheduler heartbeatScheduler) {
+      this.heartbeatScheduler = heartbeatScheduler;
+      return this;
+    }
+
+    @Override
+    public ShmBuilder discoveryStrategy(DiscoveryStrategy discoveryStrategy) {
+      return this;
+    }
+
+    @Override
+    public ShmBuilder poolSize(int poolSize) {
+      return this;
+    }
+
+    @Override
+    public ShmBuilder host(String host) {
+      return this;
+    }
+
+    @Override
+    public ShmBuilder port(int port) {
+      return super.port(port);
+    }
+
+    @Override
+    public ShmBuilder seedAddresses(Collection<SocketAddress> addresses) {
+      return this;
+    }
+
+    @Override
+    public ShmBuilder seedAddresses(String address, String... addresses) {
+      return this;
+    }
+
+    @Override
+    public ShmBuilder seedAddresses(SocketAddress address, SocketAddress... addresses) {
+      return this;
+    }
+
+    @Override
+    public ShmBuilder localAddress(String address) {
+      return this;
+    }
+
+    @Override
+    public ShmBuilder localAddress(InetAddress address) {
+      return this;
+    }
+
+    @Override
+    void prebuild() {
+      Objects.requireNonNull(accessKey, "account key is required");
+      Objects.requireNonNull(accessToken, "account token is required");
+      Objects.requireNonNull(group, "group is required");
+      if (destination == null) {
+        destination = DEFAULT_DESTINATION;
+      }
+      tags = tags.and("com.netifi.destination", destination);
+
+      this.accessTokenBytes = Base64.getDecoder().decode(accessToken);
+      this.connectionIdSeed =
+          this.connectionIdSeed == null ? UUID.randomUUID().toString() : this.connectionIdSeed;
+
+      if (inetAddress == null) {
+        try {
+          inetAddress = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+          inetAddress = InetAddress.getLoopbackAddress();
+        }
+      }
+
+      if (sharedMemoryDirectory == null || !sharedMemoryDirectory.exists()) {
+        throw new IllegalStateException("shared memory directory does not exist");
+      }
+      
+      if (!sharedMemoryDirectory.isDirectory()) {
+        throw new IllegalStateException(sharedMemoryDirectory.getName() + " is not a directory");
+      }
+      
+      logger.info("registering with netifi with group {}", group);
+
+      netifiKey = accessKey + group;
+    }
+
+    public BrokerClient build() {
+      prebuild();
+
+      Function<SocketAddress, ClientTransport> clientTransportFactory = address -> null;
+
+      return BROKERCLIENT.computeIfAbsent(
+          netifiKey,
+          _k -> {
+            BrokerClient brokerClient =
+                new BrokerClient(
+                    accessKey,
+                    Unpooled.wrappedBuffer(accessTokenBytes),
+                    connectionIdSeed,
+                    inetAddress,
+                    group,
+                    additionalFlags,
+                    tags,
+                    keepalive,
+                    tickPeriodSeconds,
+                    ackTimeoutSeconds,
+                    missedAcks,
+                    socketAddresses,
+                    BrokerAddressSelectors.TCP_ADDRESS,
+                    clientTransportFactory,
+                    poolSize,
+                    tracerSupplier,
+                    discoveryStrategy);
+            brokerClient.onClose.doFinally(s -> BROKERCLIENT.remove(netifiKey)).subscribe();
+
+            return brokerClient;
+          });
     }
   }
 
