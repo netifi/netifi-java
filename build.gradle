@@ -13,6 +13,7 @@ plugins {
     id 'io.morethan.jmhreport' version '0.6.2.1' apply false
     id 'io.spring.dependency-management' version '1.0.7.RELEASE' apply false
     id 'com.google.protobuf' version '0.8.8' apply false
+    id 'com.palantir.git-version' version '0.12.0-rc2'
 }
 
 //buildScan { licenseAgreementUrl = 'https://gradle.com/terms-of-service'; licenseAgree = 'yes' }
@@ -21,10 +22,31 @@ buildScan {
     termsOfServiceAgree = 'yes'
 }
 
+// TODO: make this a Gradle plugin someday
+def details = versionDetails()
+def versionSuffix = ""
+def buildNumber = "${System.getenv("BUILD_NUMBER") ?: "dev"}"
+def tmpArtifactVersion = "${project.version}"
+
+if (details.branchName != null) {
+    if (details.branchName.startsWith("master")) {
+        // Master should never have a POSTFIX
+    } else if (details.branchName.startsWith("release")) {
+        versionSuffix = "-RC"
+        tmpArtifactVersion += "-${buildNumber}-RC"
+    } else {
+        versionSuffix = "-${details.branchName.replace("/", "-")}-SNAPSHOT"
+        tmpArtifactVersion += "-${details.branchName.replace("/", "-")}-${buildNumber}-SNAPSHOT"
+    }
+}
 
 allprojects {
     dependencyLocking {
         lockAllConfigurations()
+    }
+    project.version += versionSuffix
+    ext {
+        artifactVersion = "${tmpArtifactVersion}"
     }
 }
 
