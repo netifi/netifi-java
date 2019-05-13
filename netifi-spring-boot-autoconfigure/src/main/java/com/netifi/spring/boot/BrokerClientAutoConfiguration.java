@@ -220,6 +220,7 @@ public class BrokerClientAutoConfiguration {
           .accessKey(access.getKey())
           .accessToken(access.getToken())
           .group(brokerClientProperties.getGroup())
+          .isPublic(brokerClientProperties.isPublic())
           .poolSize(brokerClientProperties.getPoolSize());
     };
   }
