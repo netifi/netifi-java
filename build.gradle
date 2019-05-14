@@ -29,10 +29,13 @@ def buildNumber = "${System.getenv("BUILD_NUMBER") ?: "dev"}"
 def tmpArtifactVersion = "${project.version}"
 
 if (details.branchName != null) {
-    if (details.branchName.startsWith("master")) {
-        // Master should never have a POSTFIX
+    if (details.branchName == "master") {
+        // Master should never have a postfix
+    } else if (details.branchName == "develop") {
+        versionSuffix = "-SNAPSHOT"
+        tmpArtifactVersion += "-${buildNumber}-SNAPSHOT"
     } else if (details.branchName.startsWith("release")) {
-        versionSuffix = "-RC"
+        versionSuffix = "-${buildNumber}-RC"
         tmpArtifactVersion += "-${buildNumber}-RC"
     } else {
         versionSuffix = "-${details.branchName.replace("/", "-")}-SNAPSHOT"
