@@ -26,17 +26,20 @@ buildScan {
 def details = versionDetails()
 def versionSuffix = ""
 def buildNumber = "${System.getenv("BUILD_NUMBER") ?: "dev"}"
-def tmpArtifactVersion = "${project.version}"
+def tmpUniqueVersion = "${project.version}"
 
 if (details.branchName != null) {
-    if (details.branchName.startsWith("master")) {
-        // Master should never have a POSTFIX
+    if (details.branchName == "master") {
+        // Master should never have a postfix
+    } else if (details.branchName == "develop") {
+        versionSuffix = "-SNAPSHOT"
+        tmpUniqueVersion += "-${buildNumber}-SNAPSHOT"
     } else if (details.branchName.startsWith("release")) {
-        versionSuffix = "-RC"
-        tmpArtifactVersion += "-${buildNumber}-RC"
+        versionSuffix = "-${buildNumber}-RC"
+        tmpUniqueVersion += "-${buildNumber}-RC"
     } else {
         versionSuffix = "-${details.branchName.replace("/", "-")}-SNAPSHOT"
-        tmpArtifactVersion += "-${details.branchName.replace("/", "-")}-${buildNumber}-SNAPSHOT"
+        tmpUniqueVersion += "-${details.branchName.replace("/", "-")}-${buildNumber}-SNAPSHOT"
     }
 }
 
@@ -46,7 +49,7 @@ allprojects {
     }
     project.version += versionSuffix
     ext {
-        artifactVersion = "${tmpArtifactVersion}"
+        uniqueVersion = "${tmpUniqueVersion}"
     }
 }
 

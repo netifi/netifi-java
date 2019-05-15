@@ -69,6 +69,7 @@ public class BrokerClient implements Closeable {
 
   private final long accesskey;
   private final String group;
+  private final String destination;
   private final Tags tags;
   private final BrokerService brokerService;
   private MonoProcessor<Void> onClose;
@@ -80,6 +81,7 @@ public class BrokerClient implements Closeable {
       String connectionIdSeed,
       InetAddress inetAddress,
       String group,
+      String destination,
       short additionalFlags,
       Tags tags,
       boolean keepalive,
@@ -94,8 +96,8 @@ public class BrokerClient implements Closeable {
       DiscoveryStrategy discoveryStrategy) {
     this.accesskey = accessKey;
     this.group = group;
+    this.destination = destination;
     this.tags = tags;
-
     this.onClose = MonoProcessor.create();
     this.requestHandlingRSocket = new RequestHandlingRSocket();
     this.brokerService =
@@ -118,6 +120,14 @@ public class BrokerClient implements Closeable {
             tags,
             tracerSupplier.get(),
             discoveryStrategy);
+  }
+
+  public String getGroup() {
+    return group;
+  }
+
+  public String getDestination() {
+    return destination;
   }
 
   @Deprecated
@@ -587,6 +597,7 @@ public class BrokerClient implements Closeable {
                     connectionIdSeed,
                     inetAddress,
                     group,
+                    destination,
                     additionalFlags,
                     tags,
                     keepalive,
@@ -675,6 +686,7 @@ public class BrokerClient implements Closeable {
                     connectionIdSeed,
                     inetAddress,
                     group,
+                    destination,
                     additionalFlags,
                     tags,
                     keepalive,
@@ -723,6 +735,7 @@ public class BrokerClient implements Closeable {
                     connectionIdSeed,
                     inetAddress,
                     group,
+                    destination,
                     additionalFlags,
                     tags,
                     keepalive,
@@ -1066,6 +1079,7 @@ public class BrokerClient implements Closeable {
                     connectionIdSeed,
                     inetAddress,
                     group,
+                    destination,
                     (short) 0,
                     tags,
                     keepalive,
