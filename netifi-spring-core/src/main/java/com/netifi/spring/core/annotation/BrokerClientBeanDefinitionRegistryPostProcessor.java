@@ -15,12 +15,17 @@
  */
 package com.netifi.spring.core.annotation;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.netifi.spring.core.BrokerClientFactory;
+import com.netifi.spring.core.BrokerClientFactorySupport;
 import io.rsocket.rpc.RSocketRpcService;
 import io.rsocket.rpc.annotations.internal.Generated;
 import io.rsocket.rpc.annotations.internal.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -37,6 +42,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.annotation.ContextAnnotationAutowireCandidateResolver;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.util.ClassUtils;
@@ -51,6 +57,11 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
   public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry)
       throws BeansException {
     DefaultListableBeanFactory beanFactory = unwrapDefaultListableBeanFactory(registry);
+    List<BrokerClientFactorySupport> brokerClientFactories =
+        new ArrayList<>(beanFactory.getBeansOfType(BrokerClientFactorySupport.class)
+                                 .values());
+
+    AnnotationAwareOrderComparator.sort(brokerClientFactories);
 
     beanFactory.setAutowireCandidateResolver(
         new ContextAnnotationAutowireCandidateResolver() {
@@ -72,14 +83,9 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
               for (String beanName : beanNamesForType) {
                 BeanDefinition beanDefinition = beanFactory.getMergedBeanDefinition(beanName);
 
-                if (isAutowireCandidate(
-                    new BeanDefinitionHolder(beanDefinition, beanName), descriptor)) {
-                  try {
-                    return BrokerClientStaticFactory.getBeanInstance(
-                        beanFactory, resolveClass(beanDefinition), annotation);
-                  } catch (ClassNotFoundException e) {
-                    LOGGER.error("Error during post processing of @Generated Netifi beans", e);
-                  }
+                if (isAutowireCandidate(new BeanDefinitionHolder(beanDefinition, beanName), descriptor)) {
+                  return BrokerClientStaticFactory.getBeanInstance(
+                      beanFactory, descriptor.getResolvableType(), annotation, brokerClientFactories);
                 }
               }
 
@@ -88,7 +94,7 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
               if ((generated != null && generated.type() == ResourceType.CLIENT)
                   || BrokerClientFactory.class.isAssignableFrom(descriptor.getDeclaredType())) {
                 return BrokerClientStaticFactory.getBeanInstance(
-                    beanFactory, descriptor.getDeclaredType(), annotation);
+                    beanFactory, descriptor.getResolvableType(), annotation, brokerClientFactories);
               }
             }
 

@@ -23,8 +23,11 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Gets current default configuration for {@link BrokerClient.Builder}. Can be overriden with System
@@ -148,13 +151,40 @@ final class DefaultBuilderConfig {
   static Tags getTags() {
     Tags tags = Tags.empty();
     try {
-      Arrays.stream(conf.getString("netifi.client.tags").split(","))
-          .forEach(
-              s -> {
-                String[] t = s.split(":");
-                Tag tag = Tag.of(t[0], t[1]);
-                tags.and(tag);
-              });
+      Stream<Tag> stream =
+          conf.getObject("netifi.client.tags")
+              .entrySet()
+              .stream()
+              .map(
+                  e -> {
+                    StringBuilder key = new StringBuilder(e.getKey());
+                    ConfigValue configValue = e.getValue();
+
+                    while (configValue != null &&
+                        configValue.valueType() == ConfigValueType.OBJECT) {
+                      Set<String> keySet =
+                          ((ConfigObject) configValue).keySet();
+                      String nextKey = keySet.iterator()
+                                          .next();
+                      key.append(".").append(nextKey);
+                      configValue = ((ConfigObject) configValue).get(nextKey);
+                    }
+
+                    if (configValue != null && configValue.valueType() == ConfigValueType.STRING) {
+                      String value = (String) configValue.unwrapped();
+
+                      if (value.isEmpty()) {
+                        throw new IllegalArgumentException("Tag mapping " + key + " is empty");
+                      }
+
+                      return Tag.of(key.toString(), value);
+                    }
+
+                    throw new IllegalArgumentException(
+                        "Tag mapping " + key + " is not a string: " + configValue);
+                  });
+      tags = Tags.of(stream.collect(Collectors.toList()));
+    } catch (ConfigException.Missing m) {
 
     } catch (Throwable t) {
       System.err.println("error parsing tags from config: " + t.getMessage());

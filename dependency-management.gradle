@@ -15,7 +15,10 @@ dependencyManagement {
 
     dependencies {
         dependency "org.slf4j:slf4j-api:${slf4jVersion}"
-        
+
+        dependency 'org.openjdk.jmh:jmh-core:0.9'
+        dependency 'org.openjdk.jmh:jmh-generator-annprocess:0.9'
+        dependency "com.github.davidmoten:rxjava2-jdbc:${rxjava2JdbcVersion}"
         dependency "com.github.davidmoten:rxjava2-jdbc:${rxjava2JdbcVersion}"
         dependency "com.google.guava:guava:${guavaVersion}"
         dependency "com.google.protobuf:protoc:${protobufVersion}"
@@ -75,5 +78,6 @@ dependencyManagement {
         dependency "org.postgresql:postgresql:${postgresqlVersion}"
         dependency "org.roaringbitmap:RoaringBitmap:${roaringbitmapVersion}"
         dependency "org.springframework.boot:spring-boot-starter:${springBootDependenciesVersion}"
+        dependency "org.testcontainers:testcontainers:${testcontainersVersion}"
     }
 }

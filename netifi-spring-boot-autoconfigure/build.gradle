@@ -12,6 +12,7 @@ dependencyManagement {
 
 dependencies {
     compile project(':netifi-spring-core')
+    compile project(':netifi-spring-messaging')
     compile project(':netifi-broker-client')
     compile project(':netifi-discovery')
 
@@ -20,7 +21,8 @@ dependencies {
     compile 'org.springframework.boot:spring-boot-starter-validation'
     compile 'io.opentracing:opentracing-api'
     compile 'io.micrometer:micrometer-core'
-    
+
+    compileClasspath 'org.springframework:spring-messaging'
     compileClasspath project(':netifi-tracing-openzipkin')
     compileClasspath project(':netifi-metrics-micrometer')
     compileClasspath project(':netifi-discovery-aws')
@@ -31,9 +33,11 @@ dependencies {
     annotationProcessor 'org.springframework.boot:spring-boot-autoconfigure-processor'
 
     testCompile 'org.springframework.boot:spring-boot-starter-test'
+    testCompile 'org.springframework:spring-messaging'
     testCompile 'org.mockito:mockito-core'
     testCompile 'org.junit.jupiter:junit-jupiter-api'
     testCompile 'org.junit.jupiter:junit-jupiter-engine'
+    testCompile "org.testcontainers:testcontainers"
 }
 
 test {

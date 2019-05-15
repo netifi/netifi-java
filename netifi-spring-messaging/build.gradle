@@ -1,0 +1,36 @@
+plugins {
+    id 'io.spring.dependency-management'
+}
+
+description = 'Netifi Spring Core'
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootDependenciesVersion}"
+    }
+}
+
+dependencies {
+    implementation project(":netifi-spring-core")
+
+    implementation "com.netifi:netifi-common"
+    implementation "com.netifi:netifi-broker-client"
+    implementation 'org.slf4j:slf4j-api'
+    implementation 'org.springframework:spring-core'
+    implementation 'org.springframework:spring-context'
+    implementation 'javax.validation:validation-api'
+
+    compileClasspath 'org.springframework:spring-messaging'
+
+    testImplementation 'org.springframework:spring-test'
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+    useJUnitPlatform()
+}

@@ -27,4 +27,12 @@ public interface BrokerClientFactory<T> {
   T lookup(BrokerClient.Type type);
 
   T lookup(BrokerClient.Type type, Tags tags);
+
+  T lookup(String group, Tags tag);
+
+  T lookup(String group, String... tags);
+
+  T lookup(Tags tags);
+
+  T lookup();
 }

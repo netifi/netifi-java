@@ -15,4 +15,4 @@
  */
 package com.netifi.spring.core;
 
-public class NoClass {}
+public interface TestIdl {}
