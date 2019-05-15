@@ -16,15 +16,14 @@
 package com.netifi.spring.boot;
 
 import com.netifi.broker.BrokerClient;
-import com.netifi.broker.discovery.ConsulDiscoveryConfig;
-import com.netifi.broker.discovery.DiscoveryStrategy;
-import com.netifi.broker.discovery.EC2TagsDiscoveryConfig;
-import com.netifi.broker.discovery.KubernetesDiscoveryConfig;
-import com.netifi.broker.discovery.StaticListDiscoveryConfig;
+import com.netifi.broker.discovery.*;
 import com.netifi.broker.micrometer.BrokerMeterRegistrySupplier;
 import com.netifi.broker.rsocket.transport.BrokerAddressSelectors;
 import com.netifi.broker.tracing.BrokerTracerSupplier;
+import com.netifi.common.tags.Tag;
+import com.netifi.common.tags.Tags;
 import com.netifi.spring.boot.support.BrokerClientConfigurer;
+import com.netifi.spring.core.BrokerClientTagSupplier;
 import com.netifi.spring.core.config.BrokerClientConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.handler.ssl.OpenSsl;
@@ -63,6 +62,18 @@ import reactor.netty.tcp.TcpClient;
 @AutoConfigureBefore(BrokerClientConfiguration.class)
 public class BrokerClientAutoConfiguration {
 
+  static BrokerClient configureBrokerClient(List<? extends BrokerClientConfigurer> configurers) {
+    BrokerClient.CustomizableBuilder builder = BrokerClient.customizable();
+
+    AnnotationAwareOrderComparator.sort(configurers);
+
+    for (BrokerClientConfigurer configurer : configurers) {
+      builder = configurer.configure(builder);
+    }
+
+    return builder.build();
+  }
+
   @Bean(name = "internalScanClassPathBeanDefinitionRegistryPostProcessor")
   public BeanDefinitionRegistryPostProcessor scanClassPathBeanDefinitionRegistryPostProcessor(
       ApplicationContext applicationContext) throws BeansException {
@@ -72,6 +83,7 @@ public class BrokerClientAutoConfiguration {
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE)
   public BrokerClientConfigurer propertiesBasedBrokerClientConfigurer(
+      BrokerClientTagSupplier brokerClientTagSupplier,
       BrokerClientProperties brokerClientProperties) {
     return builder -> {
       BrokerClientProperties.SslProperties ssl = brokerClientProperties.getSsl();
@@ -145,6 +157,21 @@ public class BrokerClientAutoConfiguration {
         throw new RuntimeException("discovery not configured and required");
       }
 
+      Tags tags = Tags.empty();
+      if (brokerClientProperties.getTags() != null && !brokerClientProperties.getTags().isEmpty()) {
+        for (String t : brokerClientProperties.getTags()) {
+          String[] split = t.split(":");
+          Tag tag = Tag.of(split[0], split[1]);
+          tags = tags.and(tag);
+        }
+      }
+
+      Tags suppliedTags = brokerClientTagSupplier.get();
+
+      if (suppliedTags != null) {
+        tags = tags.and(suppliedTags);
+      }
+
       boolean sslDisabled = brokerClientProperties.getSsl().isDisabled();
 
       if (connectionType == BrokerClientProperties.ConnectionType.TCP) {
@@ -183,6 +210,7 @@ public class BrokerClientAutoConfiguration {
             });
       } else if (connectionType == BrokerClientProperties.ConnectionType.WS) {
         builder.addressSelector(BrokerAddressSelectors.WEBSOCKET_ADDRESS);
+        builder.tags(tags);
         builder.clientTransportFactory(
             address -> {
               if (sslDisabled) {
@@ -222,6 +250,15 @@ public class BrokerClientAutoConfiguration {
           .group(brokerClientProperties.getGroup())
           .poolSize(brokerClientProperties.getPoolSize());
     };
+  }
+
+  @Configuration
+  @ConditionalOnMissingBean(BrokerClientTagSupplier.class)
+  public static class BrokerTagSupplierConfiguations {
+    @Bean
+    public BrokerClientTagSupplier brokerClientTagSupplier() {
+      return Tags::empty;
+    }
   }
 
   @Configuration
@@ -302,17 +339,5 @@ public class BrokerClientAutoConfiguration {
     public BrokerClient brokerClient(List<? extends BrokerClientConfigurer> configurers) {
       return configureBrokerClient(configurers);
     }
-  }
-
-  static BrokerClient configureBrokerClient(List<? extends BrokerClientConfigurer> configurers) {
-    BrokerClient.CustomizableBuilder builder = BrokerClient.customizable();
-
-    AnnotationAwareOrderComparator.sort(configurers);
-
-    for (BrokerClientConfigurer configurer : configurers) {
-      builder = configurer.configure(builder);
-    }
-
-    return builder.build();
   }
 }
