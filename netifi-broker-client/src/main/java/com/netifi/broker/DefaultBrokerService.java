@@ -435,7 +435,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
         higherQuantile,
         inactivityFactor);
   }
-  
+
   @Override
   public void dispose() {
     for (ByteBuf metadata : setupMetadata) {
