@@ -435,53 +435,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
         higherQuantile,
         inactivityFactor);
   }
-  //
-  //  @Override
-  //  public BrokerSocket group(CharSequence group, Tags tags) {
-  //    return new DefaultBrokerSocket(
-  //        payload -> {
-  //          ByteBuf data = payload.sliceData().retain();
-  //          ByteBuf metadataToWrap = payload.sliceMetadata();
-  //          ByteBuf metadata =
-  //              GroupFlyweight.encode(ByteBufAllocator.DEFAULT, group, metadataToWrap, tags);
-  //          Payload wrappedPayload = ByteBufPayload.create(data, metadata);
-  //          payload.release();
-  //          return wrappedPayload;
-  //        },
-  //        this::selectRSocket);
-  //  }
-  //
-  //  @Override
-  //  public BrokerSocket broadcast(CharSequence group, Tags tags) {
-  //    return new DefaultBrokerSocket(
-  //        payload -> {
-  //          ByteBuf data = payload.sliceData().retain();
-  //          ByteBuf metadataToWrap = payload.sliceMetadata();
-  //          ByteBuf metadata =
-  //              BroadcastFlyweight.encode(ByteBufAllocator.DEFAULT, group, metadataToWrap, tags);
-  //          Payload wrappedPayload = ByteBufPayload.create(data, metadata);
-  //          payload.release();
-  //          return wrappedPayload;
-  //        },
-  //        this::selectRSocket);
-  //  }
-  //
-  //  @Override
-  //  public BrokerSocket shard(CharSequence group, ByteBuf shardKey, Tags tags) {
-  //    return new DefaultBrokerSocket(
-  //        payload -> {
-  //          ByteBuf data = payload.sliceData().retain();
-  //          ByteBuf metadataToWrap = payload.sliceMetadata();
-  //          ByteBuf metadata =
-  //              ShardFlyweight.encode(
-  //                  ByteBufAllocator.DEFAULT, group, metadataToWrap, shardKey, tags);
-  //          Payload wrappedPayload = ByteBufPayload.create(data, metadata);
-  //          payload.release();
-  //          return wrappedPayload;
-  //        },
-  //        this::selectRSocket);
-  //  }
-
+  
   @Override
   public void dispose() {
     for (ByteBuf metadata : setupMetadata) {
