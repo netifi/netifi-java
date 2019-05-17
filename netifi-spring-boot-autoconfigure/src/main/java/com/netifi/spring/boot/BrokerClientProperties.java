@@ -34,6 +34,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class BrokerClientProperties {
 
+  private boolean isPublic;
   private List<String> tags;
 
   @Min(value = 1)
@@ -93,6 +94,14 @@ public class BrokerClientProperties {
 
   public String getGroup() {
     return group;
+  }
+
+  public boolean isPublic() {
+    return isPublic;
+  }
+
+  public void setPublic(boolean aPublic) {
+    isPublic = aPublic;
   }
 
   public void setSsl(SslProperties ssl) {
