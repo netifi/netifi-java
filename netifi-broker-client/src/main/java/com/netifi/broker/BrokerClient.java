@@ -16,6 +16,7 @@
 package com.netifi.broker;
 
 import com.netifi.broker.discovery.DiscoveryStrategy;
+import com.netifi.broker.frames.DestinationSetupFlyweight;
 import com.netifi.broker.info.Broker;
 import com.netifi.broker.rsocket.BrokerSocket;
 import com.netifi.broker.rsocket.NamedRSocketClientWrapper;
@@ -68,6 +69,7 @@ public class BrokerClient implements Closeable {
 
   private final long accesskey;
   private final String group;
+  private final String destination;
   private final Tags tags;
   private final BrokerService brokerService;
   private MonoProcessor<Void> onClose;
@@ -79,6 +81,7 @@ public class BrokerClient implements Closeable {
       String connectionIdSeed,
       InetAddress inetAddress,
       String group,
+      String destination,
       short additionalFlags,
       Tags tags,
       boolean keepalive,
@@ -93,8 +96,8 @@ public class BrokerClient implements Closeable {
       DiscoveryStrategy discoveryStrategy) {
     this.accesskey = accessKey;
     this.group = group;
+    this.destination = destination;
     this.tags = tags;
-
     this.onClose = MonoProcessor.create();
     this.requestHandlingRSocket = new RequestHandlingRSocket();
     this.brokerService =
@@ -119,6 +122,14 @@ public class BrokerClient implements Closeable {
             discoveryStrategy);
   }
 
+  public String getGroup() {
+    return group;
+  }
+
+  public String getDestination() {
+    return destination;
+  }
+
   @Deprecated
   public static Builder builder() {
     return new Builder();
@@ -134,6 +145,10 @@ public class BrokerClient implements Closeable {
 
   public static CustomizableBuilder customizable() {
     return new CustomizableBuilder();
+  }
+
+  private static String defaultDestination() {
+    return UUID.randomUUID().toString();
   }
 
   @Override
@@ -199,10 +214,22 @@ public class BrokerClient implements Closeable {
     return shardServiceSocket(group, shardKey, Tags.empty());
   }
 
+  public BrokerSocket groupServiceSocket(String group) {
+    Objects.requireNonNull(group);
+    Objects.requireNonNull(tags);
+    return brokerService.group(group, tags);
+  }
+
   public BrokerSocket groupServiceSocket(String group, Tags tags) {
     Objects.requireNonNull(group);
     Objects.requireNonNull(tags);
     return brokerService.group(group, tags);
+  }
+
+  public BrokerSocket broadcastServiceSocket(String group) {
+    Objects.requireNonNull(group);
+    Objects.requireNonNull(tags);
+    return brokerService.broadcast(group, tags);
   }
 
   public BrokerSocket broadcastServiceSocket(String group, Tags tags) {
@@ -211,10 +238,21 @@ public class BrokerClient implements Closeable {
     return brokerService.broadcast(group, tags);
   }
 
+  public BrokerSocket shardServiceSocket(String group, ByteBuf shardKey) {
+    Objects.requireNonNull(group);
+    Objects.requireNonNull(tags);
+    return brokerService.shard(group, shardKey, tags);
+  }
+
   public BrokerSocket shardServiceSocket(String group, ByteBuf shardKey, Tags tags) {
     Objects.requireNonNull(group);
     Objects.requireNonNull(tags);
     return brokerService.shard(group, shardKey, tags);
+  }
+
+  public BrokerSocket groupNamedRSocket(String name, String group) {
+    return NamedRSocketClientWrapper.wrap(
+        Objects.requireNonNull(name), groupServiceSocket(group, tags));
   }
 
   public BrokerSocket groupNamedRSocket(String name, String group, Tags tags) {
@@ -222,14 +260,34 @@ public class BrokerClient implements Closeable {
         Objects.requireNonNull(name), groupServiceSocket(group, tags));
   }
 
+  public BrokerSocket broadcastNamedRSocket(String name, String group) {
+    return NamedRSocketClientWrapper.wrap(
+        Objects.requireNonNull(name), broadcastServiceSocket(group, tags));
+  }
+
   public BrokerSocket broadcastNamedRSocket(String name, String group, Tags tags) {
     return NamedRSocketClientWrapper.wrap(
         Objects.requireNonNull(name), broadcastServiceSocket(group, tags));
   }
 
+  public BrokerSocket shardNamedRSocket(String name, String group, ByteBuf shardKey) {
+    return NamedRSocketClientWrapper.wrap(
+        Objects.requireNonNull(name), shardServiceSocket(group, shardKey, tags));
+  }
+
   public BrokerSocket shardNamedRSocket(String name, String group, ByteBuf shardKey, Tags tags) {
     return NamedRSocketClientWrapper.wrap(
         Objects.requireNonNull(name), shardServiceSocket(group, shardKey, tags));
+  }
+
+  /**
+   * This is an advanced API that lets you select a raw {@link RSocket} to the broker. Do not use
+   * this unless you know what you are doing. It will not provide any routing metadata, or wrapping
+   *
+   * @return a raw RSocket
+   */
+  public RSocket selectRSocket() {
+    return brokerService.selectRSocket();
   }
 
   public long getAccesskey() {
@@ -242,10 +300,6 @@ public class BrokerClient implements Closeable {
 
   public Tags getTags() {
     return tags;
-  }
-
-  private static String defaultDestination() {
-    return UUID.randomUUID().toString();
   }
 
   public abstract static class CommonBuilder<SELF extends CommonBuilder<SELF>> {
@@ -273,6 +327,16 @@ public class BrokerClient implements Closeable {
 
     public SELF discoveryStrategy(DiscoveryStrategy discoveryStrategy) {
       this.discoveryStrategy = discoveryStrategy;
+      return (SELF) this;
+    }
+
+    public SELF isPublic(boolean enablePublicAccess) {
+      if (enablePublicAccess) {
+        additionalFlags |= DestinationSetupFlyweight.FLAG_ENABLE_PUBLIC_ACCESS;
+      } else {
+        additionalFlags &= ~DestinationSetupFlyweight.FLAG_ENABLE_PUBLIC_ACCESS;
+      }
+
       return (SELF) this;
     }
 
@@ -460,7 +524,7 @@ public class BrokerClient implements Closeable {
 
       logger.info("registering with netifi with group {}", group);
 
-      netifiKey = accessKey + group;
+      netifiKey = accessKey + group + tags.toString();
     }
   }
 
@@ -533,6 +597,7 @@ public class BrokerClient implements Closeable {
                     connectionIdSeed,
                     inetAddress,
                     group,
+                    destination,
                     additionalFlags,
                     tags,
                     keepalive,
@@ -621,6 +686,7 @@ public class BrokerClient implements Closeable {
                     connectionIdSeed,
                     inetAddress,
                     group,
+                    destination,
                     additionalFlags,
                     tags,
                     keepalive,
@@ -669,6 +735,7 @@ public class BrokerClient implements Closeable {
                     connectionIdSeed,
                     inetAddress,
                     group,
+                    destination,
                     additionalFlags,
                     tags,
                     keepalive,
@@ -738,6 +805,10 @@ public class BrokerClient implements Closeable {
       builder.tracerSupplier = customizableBuilder.tracerSupplier;
 
       return builder;
+    }
+
+    private static String initialConnectionId() {
+      return UUID.randomUUID().toString();
     }
 
     public Builder clientTransportFactory(
@@ -815,10 +886,6 @@ public class BrokerClient implements Closeable {
       }
 
       return InetSocketAddress.createUnresolved(s[0], Integer.parseInt(s[1]));
-    }
-
-    private static String initialConnectionId() {
-      return UUID.randomUUID().toString();
     }
 
     /**
@@ -1012,6 +1079,7 @@ public class BrokerClient implements Closeable {
                     connectionIdSeed,
                     inetAddress,
                     group,
+                    destination,
                     (short) 0,
                     tags,
                     keepalive,
