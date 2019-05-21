@@ -58,14 +58,11 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'idea'
     apply plugin: 'com.github.sherter.google-java-format'
-    apply plugin: 'maven'
     apply plugin: 'maven-publish'
     apply plugin: 'license'
 
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
-
-    project.version += project.hasProperty('versionSuffix') ? project.property('versionSuffix') : ''
 
     repositories {
         maven {
