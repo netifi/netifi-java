@@ -30,7 +30,7 @@ def tmpUniqueVersion = "${project.version}"
 
 if (details.branchName != null) {
     if (details.branchName == "master") {
-        // Master should never have a postfix
+        // Master should never have a suffix
     } else if (details.branchName == "develop") {
         versionSuffix = "-SNAPSHOT"
         tmpUniqueVersion += "-${buildNumber}-SNAPSHOT"
