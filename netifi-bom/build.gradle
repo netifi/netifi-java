@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 description = 'Bill of materials to make sure a consistent set of versions is used for Netifi-Java.'
-apply plugin: 'maven-publish'
+apply plugin: 'maven'
 
 configurations.archives.artifacts.clear()
 

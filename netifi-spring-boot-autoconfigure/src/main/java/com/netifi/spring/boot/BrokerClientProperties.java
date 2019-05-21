@@ -17,6 +17,7 @@ package com.netifi.spring.boot;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -32,6 +33,9 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("netifi.client")
 @Validated
 public class BrokerClientProperties {
+
+  private boolean isPublic;
+  private List<String> tags;
 
   @Min(value = 1)
   private Integer poolSize = Runtime.getRuntime().availableProcessors();
@@ -51,6 +55,14 @@ public class BrokerClientProperties {
   private TracingProperties tracing = new TracingProperties();
 
   private DiscoveryProperties discovery = new DiscoveryProperties();
+
+  public List<String> getTags() {
+    return tags;
+  }
+
+  public void setTags(List<String> tags) {
+    this.tags = tags;
+  }
 
   public SslProperties getSsl() {
     return ssl;
@@ -82,6 +94,14 @@ public class BrokerClientProperties {
 
   public String getGroup() {
     return group;
+  }
+
+  public boolean isPublic() {
+    return isPublic;
+  }
+
+  public void setPublic(boolean aPublic) {
+    isPublic = aPublic;
   }
 
   public void setSsl(SslProperties ssl) {
@@ -117,6 +137,8 @@ public class BrokerClientProperties {
     WS,
     CUSTOMIZABLE
   }
+
+  public static final class Tags {}
 
   public static final class SslProperties {
     @NotNull private Boolean disabled = false;

@@ -26,17 +26,20 @@ buildScan {
 def details = versionDetails()
 def versionSuffix = ""
 def buildNumber = "${System.getenv("BUILD_NUMBER") ?: "dev"}"
-def tmpArtifactVersion = "${project.version}"
+def tmpUniqueVersion = "${project.version}"
 
 if (details.branchName != null) {
-    if (details.branchName.startsWith("master")) {
-        // Master should never have a POSTFIX
+    if (details.branchName == "master") {
+        // Master should never have a suffix
+    } else if (details.branchName == "develop") {
+        versionSuffix = "-SNAPSHOT"
+        tmpUniqueVersion += "-${buildNumber}-SNAPSHOT"
     } else if (details.branchName.startsWith("release")) {
-        versionSuffix = "-RC"
-        tmpArtifactVersion += "-${buildNumber}-RC"
+        versionSuffix = "-${buildNumber}-RC"
+        tmpUniqueVersion += "-${buildNumber}-RC"
     } else {
         versionSuffix = "-${details.branchName.replace("/", "-")}-SNAPSHOT"
-        tmpArtifactVersion += "-${details.branchName.replace("/", "-")}-${buildNumber}-SNAPSHOT"
+        tmpUniqueVersion += "-${details.branchName.replace("/", "-")}-${buildNumber}-SNAPSHOT"
     }
 }
 
@@ -46,7 +49,7 @@ allprojects {
     }
     project.version += versionSuffix
     ext {
-        artifactVersion = "${tmpArtifactVersion}"
+        uniqueVersion = "${tmpUniqueVersion}"
     }
 }
 
@@ -55,14 +58,11 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'idea'
     apply plugin: 'com.github.sherter.google-java-format'
-    apply plugin: 'maven'
     apply plugin: 'maven-publish'
     apply plugin: 'license'
 
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
-
-    project.version += project.hasProperty('versionSuffix') ? project.property('versionSuffix') : ''
 
     repositories {
         maven {
@@ -193,7 +193,6 @@ subprojects {
         }
         repositories {
             maven {
-                url ''
                 def releasesRepoUrl = 'https://sonatype.netifiinc.com/repository/netifi-maven-releases/'
                 def snapshotsRepoUrl = 'https://sonatype.netifiinc.com/repository/netifi-maven-snapshots/'
                 url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
