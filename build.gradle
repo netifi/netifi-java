@@ -190,7 +190,6 @@ subprojects {
         }
         repositories {
             maven {
-                url ''
                 def releasesRepoUrl = 'https://sonatype.netifiinc.com/repository/netifi-maven-releases/'
                 def snapshotsRepoUrl = 'https://sonatype.netifiinc.com/repository/netifi-maven-snapshots/'
                 url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
