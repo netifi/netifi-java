@@ -24,9 +24,9 @@ io.netty:netty-transport:4.1.31.Final
 io.projectreactor.netty:reactor-netty:0.8.8.RELEASE
 io.projectreactor:reactor-core:3.2.9.RELEASE
 io.projectreactor:reactor-test:3.2.9.RELEASE
-io.rsocket:rsocket-core:0.12.2-RC3-another-bp-SNAPSHOT
-io.rsocket:rsocket-transport-local:0.12.2-RC3-another-bp-SNAPSHOT
-io.rsocket:rsocket-transport-netty:0.12.2-RC3-another-bp-SNAPSHOT
+io.rsocket:rsocket-core:0.12.2-RC3
+io.rsocket:rsocket-transport-local:0.12.2-RC3
+io.rsocket:rsocket-transport-netty:0.12.2-RC3
 javax.inject:javax.inject:1
 junit:junit:4.12
 net.bytebuddy:byte-buddy-agent:1.9.7
