@@ -4,7 +4,7 @@
 com.fasterxml.jackson.core:jackson-annotations:2.9.0
 com.fasterxml.jackson.core:jackson-core:2.9.8
 com.fasterxml.jackson.core:jackson-databind:2.9.8
-io.projectreactor:reactor-core:3.2.6.RELEASE
+io.projectreactor:reactor-core:3.2.9.RELEASE
 javax.inject:javax.inject:1
 org.reactivestreams:reactive-streams:1.0.2
 org.slf4j:slf4j-api:1.7.25
