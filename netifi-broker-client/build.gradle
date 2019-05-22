@@ -16,7 +16,7 @@ dependencies {
     compile 'io.rsocket:rsocket-core'
     compile 'io.rsocket.rpc:rsocket-rpc-core'
     compile 'io.rsocket:rsocket-transport-netty'
-    compile 'io.netty:netty-tcnative:2.0.18.Final:linux-x86_64'
+    compile "io.netty:netty-tcnative:${nettyTcnativeVersion}:linux-x86_64"
 
     compileOnly 'javax.inject:javax.inject'
 
