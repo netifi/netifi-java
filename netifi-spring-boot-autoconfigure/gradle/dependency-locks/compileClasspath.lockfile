@@ -43,8 +43,8 @@ io.opentracing:opentracing-api:0.31.0
 io.projectreactor.addons:reactor-adapter:3.2.3.RELEASE
 io.projectreactor.netty:reactor-netty:0.8.8.RELEASE
 io.projectreactor:reactor-core:3.2.9.RELEASE
-io.rsocket.rpc:rsocket-rpc-core:0.2.13.3
-io.rsocket.rpc:rsocket-rpc-protobuf:0.2.13.3
+io.rsocket.rpc:rsocket-rpc-core:0.2.18
+io.rsocket.rpc:rsocket-rpc-protobuf:0.2.18
 io.rsocket:rsocket-core:0.12.2-RC3
 io.rsocket:rsocket-transport-netty:0.12.2-RC3
 io.zipkin.brave:brave:5.6.1
