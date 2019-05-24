@@ -30,7 +30,7 @@ def tmpUniqueVersion = "${project.version}"
 
 if (details.branchName != null) {
     if (details.branchName == "master") {
-        // Master should never have a postfix
+        // Master should never have a suffix
     } else if (details.branchName == "develop") {
         versionSuffix = "-SNAPSHOT"
         tmpUniqueVersion += "-${buildNumber}-SNAPSHOT"
@@ -58,14 +58,11 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'idea'
     apply plugin: 'com.github.sherter.google-java-format'
-    apply plugin: 'maven'
     apply plugin: 'maven-publish'
     apply plugin: 'license'
 
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
-
-    project.version += project.hasProperty('versionSuffix') ? project.property('versionSuffix') : ''
 
     repositories {
         maven {
@@ -193,7 +190,6 @@ subprojects {
         }
         repositories {
             maven {
-                url ''
                 def releasesRepoUrl = 'https://sonatype.netifiinc.com/repository/netifi-maven-releases/'
                 def snapshotsRepoUrl = 'https://sonatype.netifiinc.com/repository/netifi-maven-snapshots/'
                 url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
