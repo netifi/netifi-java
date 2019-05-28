@@ -38,9 +38,9 @@ io.projectreactor:reactor-core:3.2.9.RELEASE
 io.projectreactor:reactor-test:3.2.9.RELEASE
 io.rsocket.rpc:rsocket-rpc-core:0.2.18
 io.rsocket.rpc:rsocket-rpc-protobuf:0.2.18
-io.rsocket:rsocket-core:0.12.2-RC3
-io.rsocket:rsocket-transport-local:0.12.2-RC3
-io.rsocket:rsocket-transport-netty:0.12.2-RC3
+io.rsocket:rsocket-core:0.12.2-RC4-TEST-SNAPSHOT
+io.rsocket:rsocket-transport-local:0.12.2-RC4-TEST-SNAPSHOT
+io.rsocket:rsocket-transport-netty:0.12.2-RC4-TEST-SNAPSHOT
 io.zipkin.brave:brave:5.6.1
 io.zipkin.reporter2:zipkin-reporter:2.7.14
 io.zipkin.zipkin2:zipkin:2.12.0
