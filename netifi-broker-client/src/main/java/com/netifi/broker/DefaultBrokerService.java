@@ -38,7 +38,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.opentracing.Tracer;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
-import io.rsocket.rpc.rsocket.RequestHandlingRSocket;
+import io.rsocket.ResponderRSocket;
 import io.rsocket.transport.ClientTransport;
 import io.rsocket.util.ByteBufPayload;
 import java.net.InetAddress;
@@ -102,7 +102,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
 
   public DefaultBrokerService(
       List<SocketAddress> seedAddresses,
-      RequestHandlingRSocket requestHandlingRSocket,
+      ResponderRSocket requestHandlingRSocket,
       InetAddress localInetAddress,
       String group,
       Function<Broker, InetSocketAddress> addressSelector,
