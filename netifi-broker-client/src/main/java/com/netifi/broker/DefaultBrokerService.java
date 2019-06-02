@@ -103,6 +103,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
   public DefaultBrokerService(
       List<SocketAddress> seedAddresses,
       ResponderRSocket requestHandlingRSocket,
+      boolean responderRequiresUnwrapping,
       InetAddress localInetAddress,
       String group,
       Function<Broker, InetSocketAddress> addressSelector,
@@ -139,7 +140,10 @@ public class DefaultBrokerService implements BrokerService, Disposable {
 
     Objects.requireNonNull(clientTransportFactory);
 
-    this.requestHandlingRSocket = new UnwrappingRSocket(requestHandlingRSocket);
+    this.requestHandlingRSocket =
+        responderRequiresUnwrapping
+            ? new UnwrappingRSocket(requestHandlingRSocket)
+            : requestHandlingRSocket;
     this.localInetAddress = localInetAddress;
     this.group = group;
     this.members = Collections.synchronizedList(new ArrayList<>());

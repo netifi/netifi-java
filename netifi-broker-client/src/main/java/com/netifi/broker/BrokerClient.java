@@ -92,6 +92,7 @@ public class BrokerClient implements Closeable {
       Function<Broker, InetSocketAddress> addressSelector,
       Function<SocketAddress, ClientTransport> clientTransportFactory,
       RequestHandlingRSocket responder,
+      boolean responderRequiresUnwrapping,
       int poolSize,
       Supplier<Tracer> tracerSupplier,
       DiscoveryStrategy discoveryStrategy) {
@@ -105,6 +106,7 @@ public class BrokerClient implements Closeable {
         new DefaultBrokerService(
             seedAddresses,
             requestHandlingRSocket,
+            responderRequiresUnwrapping,
             inetAddress,
             group,
             addressSelector,
@@ -326,6 +328,7 @@ public class BrokerClient implements Closeable {
     List<SocketAddress> socketAddresses;
     DiscoveryStrategy discoveryStrategy = null;
     RequestHandlingRSocket responder = new RequestHandlingRSocket(); // DEFAULT
+    boolean responderRequiresUnwrapping = true; // DEFAULT
 
     public SELF discoveryStrategy(DiscoveryStrategy discoveryStrategy) {
       this.discoveryStrategy = discoveryStrategy;
@@ -481,8 +484,9 @@ public class BrokerClient implements Closeable {
       return (SELF) this;
     }
 
-    public SELF requestHandler(RequestHandlingRSocket responder) {
+    public SELF requestHandler(RequestHandlingRSocket responder, boolean requiresUnwrapping) {
       this.responder = responder;
+      this.responderRequiresUnwrapping = requiresUnwrapping;
       return (SELF) this;
     }
 
@@ -615,6 +619,7 @@ public class BrokerClient implements Closeable {
                     BrokerAddressSelectors.WEBSOCKET_ADDRESS,
                     clientTransportFactory,
                     responder,
+                    responderRequiresUnwrapping,
                     poolSize,
                     tracerSupplier,
                     discoveryStrategy);
@@ -705,6 +710,7 @@ public class BrokerClient implements Closeable {
                     BrokerAddressSelectors.TCP_ADDRESS,
                     clientTransportFactory,
                     responder,
+                    responderRequiresUnwrapping,
                     poolSize,
                     tracerSupplier,
                     discoveryStrategy);
@@ -755,6 +761,7 @@ public class BrokerClient implements Closeable {
                     addressSelector,
                     clientTransportFactory,
                     responder,
+                    responderRequiresUnwrapping,
                     poolSize,
                     tracerSupplier,
                     discoveryStrategy);
@@ -1100,6 +1107,7 @@ public class BrokerClient implements Closeable {
                     addressSelector,
                     clientTransportFactory,
                     new RequestHandlingRSocket(),
+                    true,
                     poolSize,
                     tracerSupplier,
                     discoveryStrategy);
