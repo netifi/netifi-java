@@ -13,6 +13,7 @@ plugins {
     id 'io.morethan.jmhreport' version '0.6.2.1' apply false
     id 'io.spring.dependency-management' version '1.0.7.RELEASE' apply false
     id 'com.google.protobuf' version '0.8.8' apply false
+    id 'com.palantir.git-version' version '0.12.0-rc2'
 }
 
 //buildScan { licenseAgreementUrl = 'https://gradle.com/terms-of-service'; licenseAgree = 'yes' }
@@ -21,10 +22,34 @@ buildScan {
     termsOfServiceAgree = 'yes'
 }
 
+// TODO: make this a Gradle plugin someday
+def details = versionDetails()
+def versionSuffix = ""
+def buildNumber = "${System.getenv("BUILD_NUMBER") ?: "dev"}"
+def tmpUniqueVersion = "${project.version}"
+
+if (details.branchName != null) {
+    if (details.branchName == "master") {
+        // Master should never have a suffix
+    } else if (details.branchName == "develop") {
+        versionSuffix = "-SNAPSHOT"
+        tmpUniqueVersion += "-${buildNumber}-SNAPSHOT"
+    } else if (details.branchName.startsWith("release")) {
+        versionSuffix = "-${buildNumber}-RC"
+        tmpUniqueVersion += "-${buildNumber}-RC"
+    } else {
+        versionSuffix = "-${details.branchName.replace("/", "-")}-SNAPSHOT"
+        tmpUniqueVersion += "-${details.branchName.replace("/", "-")}-${buildNumber}-SNAPSHOT"
+    }
+}
 
 allprojects {
     dependencyLocking {
         lockAllConfigurations()
+    }
+    project.version += versionSuffix
+    ext {
+        uniqueVersion = "${tmpUniqueVersion}"
     }
 }
 
@@ -33,14 +58,11 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'idea'
     apply plugin: 'com.github.sherter.google-java-format'
-    apply plugin: 'maven'
     apply plugin: 'maven-publish'
     apply plugin: 'license'
 
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
-
-    project.version += project.hasProperty('versionSuffix') ? project.property('versionSuffix') : ''
 
     repositories {
         mavenLocal()
@@ -134,11 +156,44 @@ subprojects {
                 from components.java
                 artifact sourcesJar
                 artifact javadocJar
+                pom {
+                    name = 'Netifi Java'
+                    description = 'A collection of java libraries for Netifi'
+                    url = 'https://www.netifi.com/'
+                    organization {
+                        name = 'Netifi, Inc.'
+                        url = 'https://www.netifi.com'
+                    }
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'Support'
+                            name = 'Netifi Engineering'
+                            email = 'support@netifi.com'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:git://github.com/netifi/netifi-java.git'
+                        developerConnection = 'scm:git:ssh://github.com/netifi/netifi-java.git'
+                        url = 'http://github.com/netifi/netifi-java/'
+                    }
+                    issueManagement {
+                        system = "GitHub Issues"
+                        url = "https://github.com/netifi/netifi-java/issues"
+                    }
+                }
             }
         }
         repositories {
             maven {
-                url 'https://sonatype.netifiinc.com/repository/netifi-maven-snapshots/'
+                def releasesRepoUrl = 'https://sonatype.netifiinc.com/repository/netifi-maven-releases/'
+                def snapshotsRepoUrl = 'https://sonatype.netifiinc.com/repository/netifi-maven-snapshots/'
+                url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
                 credentials {
                     username = "${netifiPublishUsername}"
                     password = "${netifiPublishPassword}"

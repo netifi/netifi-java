@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 description = 'Bill of materials to make sure a consistent set of versions is used for Netifi-Java.'
-apply plugin: 'maven-publish'
+apply plugin: 'maven'
 
 configurations.archives.artifacts.clear()
 
@@ -60,31 +60,32 @@ def customizePom(generatedPom, gradleProject) {
         description = gradleProject.description
         url = 'https://www.netifi.com'
         groupId = group
-
         packaging = "pom"
-
         organization {
             name = 'Netifi, Inc.'
             url = 'https://www.netifi.com'
         }
-
         licenses {
             license {
-                name 'The Apache Software License, Version 2.0'
-                url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                distribution 'repo'
+                name = 'The Apache License, Version 2.0'
+                url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
             }
         }
-
-        scm {
-            url = 'https://github.com/netifi/netifi-java'
-            connection = 'scm:git:git://github.com/netifi/netifi-java'
-            developerConnection = 'scm:git:git://github.com/netifi/netifi-java'
+        developers {
+            developer {
+                id = 'Support'
+                name = 'Netifi Engineering'
+                email = 'support@netifi.com'
+            }
         }
-
+        scm {
+            connection = 'scm:git:git://github.com/netifi/netifi-java.git'
+            developerConnection = 'scm:git:ssh://github.com/netifi/netifi-java.git'
+            url = 'http://github.com/netifi/netifi-java/'
+        }
         issueManagement {
             system = "GitHub Issues"
-            url = "https://github.com/netifi"
+            url = "https://github.com/netifi/netifi-java/issues"
         }
     }
 
