@@ -210,7 +210,6 @@ public class BrokerClientAutoConfiguration {
             });
       } else if (connectionType == BrokerClientProperties.ConnectionType.WS) {
         builder.addressSelector(BrokerAddressSelectors.WEBSOCKET_ADDRESS);
-        builder.tags(tags);
         builder.clientTransportFactory(
             address -> {
               if (sslDisabled) {
@@ -245,6 +244,7 @@ public class BrokerClientAutoConfiguration {
       }
 
       return builder
+          .tags(tags)
           .accessKey(access.getKey())
           .accessToken(access.getToken())
           .group(brokerClientProperties.getGroup())
