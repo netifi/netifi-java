@@ -218,9 +218,7 @@ public class BrokerClient implements Closeable {
   }
 
   public BrokerSocket groupServiceSocket(String group) {
-    Objects.requireNonNull(group);
-    Objects.requireNonNull(tags);
-    return brokerService.group(group, tags);
+    return groupServiceSocket(group, Tags.empty());
   }
 
   public BrokerSocket groupServiceSocket(String group, Tags tags) {
@@ -230,9 +228,7 @@ public class BrokerClient implements Closeable {
   }
 
   public BrokerSocket broadcastServiceSocket(String group) {
-    Objects.requireNonNull(group);
-    Objects.requireNonNull(tags);
-    return brokerService.broadcast(group, tags);
+    return broadcastServiceSocket(group, Tags.empty());
   }
 
   public BrokerSocket broadcastServiceSocket(String group, Tags tags) {
@@ -242,9 +238,7 @@ public class BrokerClient implements Closeable {
   }
 
   public BrokerSocket shardServiceSocket(String group, ByteBuf shardKey) {
-    Objects.requireNonNull(group);
-    Objects.requireNonNull(tags);
-    return brokerService.shard(group, shardKey, tags);
+    return shardServiceSocket(group, shardKey, Tags.empty());
   }
 
   public BrokerSocket shardServiceSocket(String group, ByteBuf shardKey, Tags tags) {
@@ -255,7 +249,7 @@ public class BrokerClient implements Closeable {
 
   public BrokerSocket groupNamedRSocket(String name, String group) {
     return NamedRSocketClientWrapper.wrap(
-        Objects.requireNonNull(name), groupServiceSocket(group, tags));
+        Objects.requireNonNull(name), groupServiceSocket(group, Tags.empty()));
   }
 
   public BrokerSocket groupNamedRSocket(String name, String group, Tags tags) {
@@ -265,7 +259,7 @@ public class BrokerClient implements Closeable {
 
   public BrokerSocket broadcastNamedRSocket(String name, String group) {
     return NamedRSocketClientWrapper.wrap(
-        Objects.requireNonNull(name), broadcastServiceSocket(group, tags));
+        Objects.requireNonNull(name), broadcastServiceSocket(group, Tags.empty()));
   }
 
   public BrokerSocket broadcastNamedRSocket(String name, String group, Tags tags) {
@@ -275,7 +269,7 @@ public class BrokerClient implements Closeable {
 
   public BrokerSocket shardNamedRSocket(String name, String group, ByteBuf shardKey) {
     return NamedRSocketClientWrapper.wrap(
-        Objects.requireNonNull(name), shardServiceSocket(group, shardKey, tags));
+        Objects.requireNonNull(name), shardServiceSocket(group, shardKey, Tags.empty()));
   }
 
   public BrokerSocket shardNamedRSocket(String name, String group, ByteBuf shardKey, Tags tags) {

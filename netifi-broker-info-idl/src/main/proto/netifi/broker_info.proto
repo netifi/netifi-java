@@ -28,6 +28,10 @@ message Tag {
     string value = 2;
 }
 
+message Tags {
+  repeated Tag tags = 1;
+}
+
 message Id {
     fixed64 first = 1 [jstype = JS_STRING];
     fixed64 second = 2 [jstype = JS_STRING];
@@ -86,6 +90,7 @@ message Event {
 service BrokerInfoService {
     rpc Brokers (google.protobuf.Empty) returns (stream Broker) {}
     rpc Groups (Broker) returns (stream Group) {}
+    rpc GroupsFilteredByTags (Tags) returns (stream Group) {}
     rpc Destinations (Broker) returns (stream Destination) {}
     rpc DestinationsByBrokerAndGroup (Group) returns (stream Destination) {}
     rpc DestinationsByGroup (Group) returns (stream Destination) {}
@@ -96,6 +101,7 @@ service BrokerInfoService {
     rpc streamBrokerEvents (google.protobuf.Empty) returns (stream Event) {}
     rpc streamBrokerRollupEvents (google.protobuf.Empty) returns (stream Event) {}
     rpc streamDestinationRollupEvents (google.protobuf.Empty) returns (stream Event) {}
+    rpc streamDestinationRollupEventsFilteredByTags (Tags) returns (stream Event) {}
+    rpc streamGroupRollupEventsFilteredByTags (Tags) returns (stream Event) {}
     rpc streamDestinationEventsByDestinationName (Destination) returns (stream Event) {}
-
 }
