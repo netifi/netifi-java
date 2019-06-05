@@ -29,7 +29,6 @@ import io.rsocket.RSocket;
 import io.rsocket.RSocketFactory;
 import io.rsocket.frame.SetupFrameFlyweight;
 import io.rsocket.transport.netty.server.TcpServerTransport;
-
 import java.time.Duration;
 import java.util.Optional;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -69,8 +68,7 @@ public class BrokerClientMessagingAutoConfiguration {
       DefaultListableBeanFactory factory,
       RSocketStrategies rSocketStrategies,
       BrokerClient brokerClient) {
-    BrokerClientProperties.KeepAliveProperties keepalive =
-        brokerClientProperties.getKeepalive();
+    BrokerClientProperties.KeepAliveProperties keepalive = brokerClientProperties.getKeepalive();
     Duration tickPeriod = Duration.ofSeconds(keepalive.getTickPeriodSeconds());
     Duration ackTimeout = Duration.ofSeconds(keepalive.getAckTimeoutSeconds());
     int missedAcks = keepalive.getMissedAcks();
@@ -87,9 +85,7 @@ public class BrokerClientMessagingAutoConfiguration {
                 "text/plain",
                 "text/plain",
                 Unpooled.EMPTY_BUFFER,
-                Unpooled.EMPTY_BUFFER
-            )
-        );
+                Unpooled.EMPTY_BUFFER));
     MessageHandlerAcceptor acceptor = new MessageHandlerAcceptor();
     acceptor.setRSocketStrategies(rSocketStrategies);
     acceptor
@@ -104,8 +100,7 @@ public class BrokerClientMessagingAutoConfiguration {
                 properties.getName(), brokerClient, factory, rSocketStrategies));
 
     brokerClient.addNamedRSocket(
-        properties.getName(),
-        acceptor.apply(connectionSetupPayload, STUB_RSOCKET));
+        properties.getName(), acceptor.apply(connectionSetupPayload, STUB_RSOCKET));
 
     return acceptor;
   }

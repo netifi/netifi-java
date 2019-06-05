@@ -18,16 +18,15 @@ package com.netifi.spring.boot.test;
 import com.netifi.spring.boot.BrokerClientAutoConfiguration;
 import com.netifi.spring.boot.BrokerClientMessagingAutoConfiguration;
 import com.netifi.spring.core.config.BrokerClientConfiguration;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 @ImportAutoConfiguration({
-    BrokerClientMessagingAutoConfiguration.class,
-    BrokerClientAutoConfiguration.class,
-    BrokerClientConfiguration.class,
+  BrokerClientMessagingAutoConfiguration.class,
+  BrokerClientAutoConfiguration.class,
+  BrokerClientConfiguration.class,
 })
 public class TestApplication {
   public static void main(String[] args) {

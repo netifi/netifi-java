@@ -17,26 +17,15 @@ package com.netifi.spring.boot.test;
 
 import com.netifi.spring.core.annotation.Group;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.containers.wait.strategy.WaitStrategy;
-import org.testcontainers.containers.wait.strategy.WaitStrategyTarget;
-
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.messaging.rsocket.RSocketRequester;
-import org.springframework.test.context.event.annotation.BeforeTestClass;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.testcontainers.containers.GenericContainer;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
-//@TestPropertySource(locations="classpath:application.properties")
 public class SpringMessagingIntegrationTest {
 
   public static GenericContainer redis =
@@ -45,17 +34,14 @@ public class SpringMessagingIntegrationTest {
           .withEnv(
               "BROKER_SERVER_OPTS",
               "-Dnetifi.authentication.0.accessKey=9007199254740991 "
-            + "-Dnetifi.authentication.0.accessToken=kTBDVtfRBO4tHOnZzSyY5ym2kfY= "
-            + "-Dnetifi.broker.admin.accessKey=9007199254740991 "
-            + "-Dnetifi.broker.admin.accessToken=kTBDVtfRBO4tHOnZzSyY5ym2kfY="
-          );
-
+                  + "-Dnetifi.authentication.0.accessToken=kTBDVtfRBO4tHOnZzSyY5ym2kfY= "
+                  + "-Dnetifi.broker.admin.accessKey=9007199254740991 "
+                  + "-Dnetifi.broker.admin.accessToken=kTBDVtfRBO4tHOnZzSyY5ym2kfY=");
 
   static {
     redis.start();
     System.setProperty("netifi.client.broker.hostname", redis.getContainerIpAddress());
-    System.setProperty("netifi.client.broker.port",
-        String.valueOf(redis.getMappedPort(8001)));
+    System.setProperty("netifi.client.broker.port", String.valueOf(redis.getMappedPort(8001)));
   }
 
   @Group("com.netifi.client.demo.vowelcount")
@@ -65,10 +51,6 @@ public class SpringMessagingIntegrationTest {
   public void tests() {
     Assert.assertNotNull(requester.rsocket());
 
-    requester.route("test.process")
-             .data("test")
-             .retrieveMono(String.class)
-             .log()
-             .block();
+    requester.route("test.process").data("test").retrieveMono(String.class).log().block();
   }
 }

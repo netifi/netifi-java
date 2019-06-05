@@ -148,11 +148,10 @@ public class BrokerClientProperties {
 
   public static final class KeepAliveProperties {
 
-    @NotNull
-    private Boolean enabled           = true;
-    private long    tickPeriodSeconds = 20;
-    private long    ackTimeoutSeconds = 30;
-    private int     missedAcks        = 3;
+    @NotNull private Boolean enabled = true;
+    private long tickPeriodSeconds = 20;
+    private long ackTimeoutSeconds = 30;
+    private int missedAcks = 3;
 
     public long getAckTimeoutSeconds() {
       return ackTimeoutSeconds;

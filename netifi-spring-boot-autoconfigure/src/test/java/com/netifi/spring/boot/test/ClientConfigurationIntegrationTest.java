@@ -34,19 +34,19 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = {
-    ClientConfigurationIntegrationTest.TestConfiguration.class,
-    BrokerClientAutoConfiguration.class,
-    BrokerClientConfiguration.class
-})
+@SpringBootTest
 public class ClientConfigurationIntegrationTest {
 
   @Autowired
   @Qualifier("mock2")
   BrokerClientConfigurer configurer;
 
+  @Autowired
+  BrokerClient brokerClient;
+
   @Test
   public void testThatConfigurerWorks() {
+    Assertions.assertNotNull(brokerClient);
     ArgumentCaptor<BrokerClient.CustomizableBuilder> captor =
         ArgumentCaptor.forClass(BrokerClient.CustomizableBuilder.class);
 
@@ -56,7 +56,7 @@ public class ClientConfigurationIntegrationTest {
   }
 
   @org.springframework.boot.test.context.TestConfiguration
-  @ComponentScan
+//  @ComponentScan
   static class TestConfiguration {
 
     @Bean

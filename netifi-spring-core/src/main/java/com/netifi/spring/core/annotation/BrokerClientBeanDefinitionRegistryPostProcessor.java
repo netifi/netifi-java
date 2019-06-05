@@ -67,7 +67,8 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
           @Override
           public Object getSuggestedValue(DependencyDescriptor descriptor) {
             List<BrokerClientFactorySupport> brokerClientFactories =
-                new ArrayList<>(beanFactory.getBeansOfType(BrokerClientFactorySupport.class).values());
+                new ArrayList<>(
+                    beanFactory.getBeansOfType(BrokerClientFactorySupport.class).values());
 
             AnnotationAwareOrderComparator.sort(brokerClientFactories);
 
@@ -80,8 +81,7 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
 
             if (annotation != null) {
               Class<?> descriptorDeclaredType = descriptor.getDeclaredType();
-              String[] beanNamesForType =
-                  beanFactory.getBeanNamesForType(descriptorDeclaredType);
+              String[] beanNamesForType = beanFactory.getBeanNamesForType(descriptorDeclaredType);
 
               for (String beanName : beanNamesForType) {
                 BeanDefinition beanDefinition = beanFactory.getMergedBeanDefinition(beanName);
@@ -119,9 +119,7 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
       throws BeansException {}
 
   private static boolean isSuportedByFactories(
-      Collection<BrokerClientFactorySupport> brokerClientFactories,
-      Class<?> clazz
-  ) {
+      Collection<BrokerClientFactorySupport> brokerClientFactories, Class<?> clazz) {
     for (BrokerClientFactorySupport factory : brokerClientFactories) {
       if (factory.support(clazz)) {
         return true;

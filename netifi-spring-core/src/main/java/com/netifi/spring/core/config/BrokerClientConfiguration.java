@@ -19,7 +19,6 @@ import com.netifi.broker.BrokerClient;
 import com.netifi.broker.info.BrokerInfoService;
 import com.netifi.broker.info.BrokerInfoServiceClient;
 import com.netifi.broker.info.BrokerInfoServiceServer;
-import com.netifi.common.tags.Tags;
 import com.netifi.spring.core.BrokerClientApplicationEventListener;
 import com.netifi.spring.core.annotation.BrokerClientBeanDefinitionRegistryPostProcessor;
 import com.netifi.spring.core.annotation.RpcBrokerClientFactorySupport;

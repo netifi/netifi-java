@@ -46,12 +46,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
-@DirtiesContext
-@ImportAutoConfiguration({
-  BrokerClientAutoConfiguration.class,
-  BrokerClientConfiguration.class,
-  BrokerClientSpringIntegrationTest.TestConfiguration.class
-})
 public class BrokerClientSpringIntegrationTest {
 
   @Autowired ConfigurableListableBeanFactory beanFactory;
