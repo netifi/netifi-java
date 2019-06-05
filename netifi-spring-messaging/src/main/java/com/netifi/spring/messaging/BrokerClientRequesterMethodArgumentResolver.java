@@ -16,10 +16,13 @@
 
 package com.netifi.spring.messaging;
 
+import static com.netifi.spring.core.annotation.BrokerClientStaticFactory.resolveTags;
+import static com.netifi.spring.messaging.RSocketRequesterStaticFactory.createRSocketRequester;
+import static com.netifi.spring.messaging.RSocketRequesterStaticFactory.resolveBrokerClientRSocket;
+import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
+
 import com.netifi.broker.BrokerClient;
 import io.rsocket.RSocket;
-import reactor.core.publisher.Mono;
-
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.core.MethodParameter;
 import org.springframework.messaging.Message;
@@ -27,78 +30,69 @@ import org.springframework.messaging.handler.invocation.reactive.HandlerMethodAr
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.messaging.rsocket.RSocketStrategies;
 import org.springframework.util.Assert;
-
-import static com.netifi.spring.core.annotation.BrokerClientStaticFactory.resolveTags;
-import static com.netifi.spring.messaging.RSocketRequesterStaticFactory.createRSocketRequester;
-import static com.netifi.spring.messaging.RSocketRequesterStaticFactory.resolveBrokerClientRSocket;
-import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
+import reactor.core.publisher.Mono;
 
 /**
- * Resolves arguments of type {@link RSocket} that can be used for making
- * requests to the remote peer.
+ * Resolves arguments of type {@link RSocket} that can be used for making requests to the remote
+ * peer.
  *
  * @author Rossen Stoyanchev
  * @since 5.2
  */
-public class BrokerClientRequesterMethodArgumentResolver
-    implements HandlerMethodArgumentResolver {
+public class BrokerClientRequesterMethodArgumentResolver implements HandlerMethodArgumentResolver {
 
-	private final String                     rSocketName;
-	private final BrokerClient               brokerClient;
-	private final DefaultListableBeanFactory listableBeanFactory;
-	private final RSocketStrategies          rSocketStrategies;
+  private final String rSocketName;
+  private final BrokerClient brokerClient;
+  private final DefaultListableBeanFactory listableBeanFactory;
+  private final RSocketStrategies rSocketStrategies;
 
-	public BrokerClientRequesterMethodArgumentResolver(
-		String rSocketName,
-		BrokerClient client,
-		DefaultListableBeanFactory factory,
-		RSocketStrategies strategies
-	) {
-		this.rSocketName = rSocketName;
-		brokerClient = client;
-		listableBeanFactory = factory;
-		rSocketStrategies = strategies;
-	}
+  public BrokerClientRequesterMethodArgumentResolver(
+      String rSocketName,
+      BrokerClient client,
+      DefaultListableBeanFactory factory,
+      RSocketStrategies strategies) {
+    this.rSocketName = rSocketName;
+    brokerClient = client;
+    listableBeanFactory = factory;
+    rSocketStrategies = strategies;
+  }
 
-	@Override
-	public boolean supportsParameter(MethodParameter parameter) {
-		Class<?> type = parameter.getParameterType();
-		return (RSocketRequester.class.equals(type) || RSocket.class.isAssignableFrom(type));
-	}
+  @Override
+  public boolean supportsParameter(MethodParameter parameter) {
+    Class<?> type = parameter.getParameterType();
+    return (RSocketRequester.class.equals(type) || RSocket.class.isAssignableFrom(type));
+  }
 
-	@Override
-	public Mono<Object> resolveArgument(MethodParameter parameter, Message<?> message) {
-		Class<?> type = parameter.getParameterType();
-		com.netifi.spring.core.annotation.BrokerClient brokerClientAnnotation =
-			getMergedAnnotation(parameter.getParameter(), com.netifi.spring.core.annotation.BrokerClient.class);
+  @Override
+  public Mono<Object> resolveArgument(MethodParameter parameter, Message<?> message) {
+    Class<?> type = parameter.getParameterType();
+    com.netifi.spring.core.annotation.BrokerClient brokerClientAnnotation =
+        getMergedAnnotation(
+            parameter.getParameter(), com.netifi.spring.core.annotation.BrokerClient.class);
 
-		Assert.notNull(
-			brokerClientAnnotation,
-			"Incorrect Method Parameter, make sure your parameter is annotated with the @BrokerClient annotation"
-		);
+    Assert.notNull(
+        brokerClientAnnotation,
+        "Incorrect Method Parameter, make sure your parameter is annotated with the @BrokerClient annotation");
 
-		if (RSocketRequester.class.equals(type)) {
-			return Mono.just(createRSocketRequester(
-				rSocketName,
-				brokerClient,
-				brokerClientAnnotation,
-				resolveTags(listableBeanFactory, brokerClientAnnotation),
-				rSocketStrategies
-			));
-		}
-		else if (RSocket.class.isAssignableFrom(type)) {
-			return Mono.just(resolveBrokerClientRSocket(
-				rSocketName,
-				brokerClient,
-				brokerClientAnnotation.type(),
-				brokerClientAnnotation.group(),
-				brokerClientAnnotation.destination(),
-				resolveTags(listableBeanFactory, brokerClientAnnotation)
-			));
-		}
-		else {
-			return Mono.error(new IllegalArgumentException("Unexpected parameter type: " + parameter));
-		}
-	}
-
+    if (RSocketRequester.class.equals(type)) {
+      return Mono.just(
+          createRSocketRequester(
+              rSocketName,
+              brokerClient,
+              brokerClientAnnotation,
+              resolveTags(listableBeanFactory, brokerClientAnnotation),
+              rSocketStrategies));
+    } else if (RSocket.class.isAssignableFrom(type)) {
+      return Mono.just(
+          resolveBrokerClientRSocket(
+              rSocketName,
+              brokerClient,
+              brokerClientAnnotation.type(),
+              brokerClientAnnotation.group(),
+              brokerClientAnnotation.destination(),
+              resolveTags(listableBeanFactory, brokerClientAnnotation)));
+    } else {
+      return Mono.error(new IllegalArgumentException("Unexpected parameter type: " + parameter));
+    }
+  }
 }

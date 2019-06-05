@@ -15,13 +15,12 @@
  */
 package com.netifi.broker;
 
+import com.netifi.common.tags.Tag;
+import com.netifi.common.tags.Tags;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
 import java.util.Optional;
-
-import com.netifi.common.tags.Tag;
-import com.netifi.common.tags.Tags;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -68,8 +67,7 @@ public class DefaultBuilderConfigTest {
   public void testShouldParseTagsSuccessfully() {
     System.setProperty("netifi.client.tags.com.netifi.destination", "myDestination");
     Tags tags = DefaultBuilderConfig.getTags();
-    Optional<Tag> first = tags.stream()
-                              .findFirst();
+    Optional<Tag> first = tags.stream().findFirst();
 
     Assert.assertTrue(first.isPresent());
     Assert.assertEquals(first.get(), Tag.of("com.netifi.destination", "myDestination"));

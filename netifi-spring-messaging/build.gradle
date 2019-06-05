@@ -11,7 +11,7 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation project(":netifi-spring-core")
+    compile project(":netifi-spring-core")
 
     implementation "com.netifi:netifi-common"
     implementation "com.netifi:netifi-broker-client"

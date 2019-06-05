@@ -19,8 +19,8 @@ import com.netifi.broker.BrokerClient;
 import com.netifi.broker.info.BrokerInfoService;
 import com.netifi.broker.info.BrokerInfoServiceClient;
 import com.netifi.broker.info.BrokerInfoServiceServer;
+import com.netifi.common.tags.Tags;
 import com.netifi.spring.core.BrokerClientApplicationEventListener;
-import com.netifi.spring.core.annotation.BaseBrokerClientFactory;
 import com.netifi.spring.core.annotation.BrokerClientBeanDefinitionRegistryPostProcessor;
 import com.netifi.spring.core.annotation.RpcBrokerClientFactorySupport;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -37,16 +37,16 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 
 @Configuration
 public class BrokerClientConfiguration implements ApplicationContextAware {
 
   @Bean
   public RpcBrokerClientFactorySupport rpcBrokerClientFactorySupport(
-      BrokerClient brokerClient,
-      Optional<MeterRegistry> registry,
-      Optional<Tracer> tracer) {
-    return new RpcBrokerClientFactorySupport(brokerClient, registry.orElse(null), tracer.orElse(null));
+      BrokerClient brokerClient, Optional<MeterRegistry> registry, Optional<Tracer> tracer) {
+    return new RpcBrokerClientFactorySupport(
+        brokerClient, registry.orElse(null), tracer.orElse(null));
   }
 
   @Bean(name = "internalBrokerClientBeanDefinitionRegistryPostProcessor")

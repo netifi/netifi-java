@@ -13,11 +13,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.netifi.spring.boot;
+package com.netifi.spring.boot.test;
 
 import static org.mockito.ArgumentMatchers.any;
 
 import com.netifi.broker.BrokerClient;
+import com.netifi.spring.boot.BrokerClientAutoConfiguration;
 import com.netifi.spring.boot.support.BrokerClientConfigurer;
 import com.netifi.spring.core.config.BrokerClientConfiguration;
 import org.junit.jupiter.api.Assertions;
@@ -27,19 +28,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
-@ImportAutoConfiguration({
-  ClientConfigurationIntegrationTest.TestConfiguration.class,
-  BrokerClientAutoConfiguration.class,
-  BrokerClientConfiguration.class,
-  ClientConfigurationIntegrationTest.TestConfiguration.class
+@SpringBootTest(classes = {
+    ClientConfigurationIntegrationTest.TestConfiguration.class,
+    BrokerClientAutoConfiguration.class,
+    BrokerClientConfiguration.class
 })
 public class ClientConfigurationIntegrationTest {
 

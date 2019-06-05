@@ -32,6 +32,10 @@ dependencies {
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor 'org.springframework.boot:spring-boot-autoconfigure-processor'
 
+
+
+    testCompile project(':netifi-spring-core')
+    testCompile project(':netifi-spring-messaging')
     testCompile 'org.springframework.boot:spring-boot-starter-test'
     testCompile 'org.springframework:spring-messaging'
     testCompile 'org.mockito:mockito-core'

@@ -13,11 +13,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.netifi.spring.boot;
+package com.netifi.spring.boot.test;
 
 import com.netifi.broker.info.BrokerInfoService;
 import com.netifi.broker.info.BrokerInfoServiceClient;
 import com.netifi.spring.DefaultExternalIdlClient;
+import com.netifi.spring.boot.BrokerClientAutoConfiguration;
 import com.netifi.spring.core.BroadcastAwareClientFactory;
 import com.netifi.spring.core.DestinationAwareClientFactory;
 import com.netifi.spring.core.GroupAwareClientFactory;

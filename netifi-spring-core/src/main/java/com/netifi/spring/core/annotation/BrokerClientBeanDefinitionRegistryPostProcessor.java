@@ -15,17 +15,16 @@
  */
 package com.netifi.spring.core.annotation;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.netifi.spring.core.BrokerClientFactory;
 import com.netifi.spring.core.BrokerClientFactorySupport;
 import io.rsocket.rpc.RSocketRpcService;
 import io.rsocket.rpc.annotations.internal.Generated;
 import io.rsocket.rpc.annotations.internal.ResourceType;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -39,8 +38,11 @@ import org.springframework.beans.factory.support.AutowireCandidateResolver;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.support.GenericBeanDefinition;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.annotation.ContextAnnotationAutowireCandidateResolver;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.type.AnnotationMetadata;
@@ -57,11 +59,6 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
   public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry)
       throws BeansException {
     DefaultListableBeanFactory beanFactory = unwrapDefaultListableBeanFactory(registry);
-    List<BrokerClientFactorySupport> brokerClientFactories =
-        new ArrayList<>(beanFactory.getBeansOfType(BrokerClientFactorySupport.class)
-                                 .values());
-
-    AnnotationAwareOrderComparator.sort(brokerClientFactories);
 
     beanFactory.setAutowireCandidateResolver(
         new ContextAnnotationAutowireCandidateResolver() {
@@ -69,6 +66,11 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
 
           @Override
           public Object getSuggestedValue(DependencyDescriptor descriptor) {
+            List<BrokerClientFactorySupport> brokerClientFactories =
+                new ArrayList<>(beanFactory.getBeansOfType(BrokerClientFactorySupport.class).values());
+
+            AnnotationAwareOrderComparator.sort(brokerClientFactories);
+
             BrokerClient annotation =
                 descriptor.getField() == null
                     ? AnnotatedElementUtils.getMergedAnnotation(
@@ -77,22 +79,28 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
                         descriptor.getAnnotatedElement(), BrokerClient.class);
 
             if (annotation != null) {
+              Class<?> descriptorDeclaredType = descriptor.getDeclaredType();
               String[] beanNamesForType =
-                  beanFactory.getBeanNamesForType(descriptor.getDeclaredType());
+                  beanFactory.getBeanNamesForType(descriptorDeclaredType);
 
               for (String beanName : beanNamesForType) {
                 BeanDefinition beanDefinition = beanFactory.getMergedBeanDefinition(beanName);
 
-                if (isAutowireCandidate(new BeanDefinitionHolder(beanDefinition, beanName), descriptor)) {
+                if (isAutowireCandidate(
+                    new BeanDefinitionHolder(beanDefinition, beanName), descriptor)) {
                   return BrokerClientStaticFactory.getBeanInstance(
-                      beanFactory, descriptor.getResolvableType(), annotation, brokerClientFactories);
+                      beanFactory,
+                      resolveResolvableType(beanDefinition),
+                      annotation,
+                      brokerClientFactories);
                 }
               }
 
-              Generated generated = descriptor.getDeclaredType().getAnnotation(Generated.class);
+              Generated generated = descriptorDeclaredType.getAnnotation(Generated.class);
 
               if ((generated != null && generated.type() == ResourceType.CLIENT)
-                  || BrokerClientFactory.class.isAssignableFrom(descriptor.getDeclaredType())) {
+                  || BrokerClientFactory.class.isAssignableFrom(descriptorDeclaredType)
+                  || isSuportedByFactories(brokerClientFactories, descriptorDeclaredType)) {
                 return BrokerClientStaticFactory.getBeanInstance(
                     beanFactory, descriptor.getResolvableType(), annotation, brokerClientFactories);
               }
@@ -109,6 +117,18 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
   @Override
   public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
       throws BeansException {}
+
+  private static boolean isSuportedByFactories(
+      Collection<BrokerClientFactorySupport> brokerClientFactories,
+      Class<?> clazz
+  ) {
+    for (BrokerClientFactorySupport factory : brokerClientFactories) {
+      if (factory.support(clazz)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   private static void processAllGeneratedBeanDefinitions(DefaultListableBeanFactory beanFactory) {
     for (String beanName : beanFactory.getBeanNamesForAnnotation(Generated.class)) {
@@ -161,7 +181,8 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
     }
   }
 
-  public static Class<?> resolveClass(BeanDefinition beanDefinition) throws ClassNotFoundException {
+  private static Class<?> resolveClass(BeanDefinition beanDefinition)
+      throws ClassNotFoundException {
     Class<?> clazz = null;
 
     if (beanDefinition.getBeanClassName() != null) {
@@ -180,6 +201,17 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
     }
 
     return clazz;
+  }
+
+  private static ResolvableType resolveResolvableType(BeanDefinition beanDefinition) {
+
+    if (beanDefinition instanceof RootBeanDefinition) {
+      return ((RootBeanDefinition) beanDefinition).getResolvableType();
+    } else if (beanDefinition instanceof GenericBeanDefinition) {
+      return ResolvableType.forClass(((GenericBeanDefinition) beanDefinition).getBeanClass());
+    }
+
+    throw new IllegalArgumentException("Impossible to resolve bean type");
   }
 
   private static boolean findRealImplementationAndMarkAsPrimary(

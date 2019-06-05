@@ -35,7 +35,7 @@ import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.transport.netty.client.WebsocketClientTransport;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.beans.BeansException;
+
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -44,7 +44,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnNotWebAppli
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.event.ApplicationFailedEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -75,8 +74,7 @@ public class BrokerClientAutoConfiguration {
   }
 
   @Bean(name = "internalScanClassPathBeanDefinitionRegistryPostProcessor")
-  public BeanDefinitionRegistryPostProcessor scanClassPathBeanDefinitionRegistryPostProcessor(
-      ApplicationContext applicationContext) throws BeansException {
+  public BeanDefinitionRegistryPostProcessor scanClassPathBeanDefinitionRegistryPostProcessor() {
     return new ScanClassPathBeanDefinitionRegistryPostProcessor();
   }
 
@@ -90,6 +88,7 @@ public class BrokerClientAutoConfiguration {
       BrokerClientProperties.AccessProperties access = brokerClientProperties.getAccess();
       BrokerClientProperties.BrokerProperties broker = brokerClientProperties.getBroker();
       BrokerClientProperties.DiscoveryProperties discovery = brokerClientProperties.getDiscovery();
+      BrokerClientProperties.KeepAliveProperties keepalive = brokerClientProperties.getKeepalive();
 
       if (!StringUtils.isEmpty(brokerClientProperties.getDestination())) {
         builder.destination(brokerClientProperties.getDestination());
@@ -172,7 +171,7 @@ public class BrokerClientAutoConfiguration {
         tags = tags.and(suppliedTags);
       }
 
-      boolean sslDisabled = brokerClientProperties.getSsl().isDisabled();
+      boolean sslDisabled = ssl.isDisabled();
 
       if (connectionType == BrokerClientProperties.ConnectionType.TCP) {
         builder.addressSelector(BrokerAddressSelectors.TCP_ADDRESS);
@@ -210,6 +209,7 @@ public class BrokerClientAutoConfiguration {
             });
       } else if (connectionType == BrokerClientProperties.ConnectionType.WS) {
         builder.addressSelector(BrokerAddressSelectors.WEBSOCKET_ADDRESS);
+        builder.tags(tags);
         builder.clientTransportFactory(
             address -> {
               if (sslDisabled) {
@@ -244,7 +244,10 @@ public class BrokerClientAutoConfiguration {
       }
 
       return builder
-          .tags(tags)
+          .keepalive(keepalive.isEnabled())
+          .ackTimeoutSeconds(keepalive.getAckTimeoutSeconds())
+          .tickPeriodSeconds(keepalive.getTickPeriodSeconds())
+          .missedAcks(keepalive.getMissedAcks())
           .accessKey(access.getKey())
           .accessToken(access.getToken())
           .group(brokerClientProperties.getGroup())

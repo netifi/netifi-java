@@ -50,11 +50,13 @@ public class BrokerClientProperties {
 
   @Valid private BrokerProperties broker = new BrokerProperties();
 
-  private MetricsProperties metrics = new MetricsProperties();
+  @Valid private MetricsProperties metrics = new MetricsProperties();
 
-  private TracingProperties tracing = new TracingProperties();
+  @Valid private TracingProperties tracing = new TracingProperties();
 
-  private DiscoveryProperties discovery = new DiscoveryProperties();
+  @Valid private DiscoveryProperties discovery = new DiscoveryProperties();
+
+  @Valid private KeepAliveProperties keepalive = new KeepAliveProperties();
 
   public List<String> getTags() {
     return tags;
@@ -86,6 +88,10 @@ public class BrokerClientProperties {
 
   public DiscoveryProperties getDiscovery() {
     return discovery;
+  }
+
+  public KeepAliveProperties getKeepalive() {
+    return keepalive;
   }
 
   public String getDestination() {
@@ -139,6 +145,47 @@ public class BrokerClientProperties {
   }
 
   public static final class Tags {}
+
+  public static final class KeepAliveProperties {
+
+    @NotNull
+    private Boolean enabled           = true;
+    private long    tickPeriodSeconds = 20;
+    private long    ackTimeoutSeconds = 30;
+    private int     missedAcks        = 3;
+
+    public long getAckTimeoutSeconds() {
+      return ackTimeoutSeconds;
+    }
+
+    public int getMissedAcks() {
+      return missedAcks;
+    }
+
+    public long getTickPeriodSeconds() {
+      return tickPeriodSeconds;
+    }
+
+    public Boolean isEnabled() {
+      return enabled;
+    }
+
+    public void setAckTimeoutSeconds(long ackTimeoutSeconds) {
+      this.ackTimeoutSeconds = ackTimeoutSeconds;
+    }
+
+    public void setEnabled(Boolean enabled) {
+      this.enabled = enabled;
+    }
+
+    public void setMissedAcks(int missedAcks) {
+      this.missedAcks = missedAcks;
+    }
+
+    public void setTickPeriodSeconds(long tickPeriodSeconds) {
+      this.tickPeriodSeconds = tickPeriodSeconds;
+    }
+  }
 
   public static final class SslProperties {
     @NotNull private Boolean disabled = false;

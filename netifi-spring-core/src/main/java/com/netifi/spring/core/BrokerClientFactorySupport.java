@@ -5,7 +5,7 @@ import com.netifi.spring.core.annotation.BrokerClient;
 
 public interface BrokerClientFactorySupport {
 
-    boolean support(Class<?> clazz);
+  boolean support(Class<?> clazz);
 
-    <T> T lookup(Class<T> tClass, BrokerClient.Type type, String group, Tags tag);
+  <T> T lookup(Class<T> tClass, BrokerClient.Type type, String group, Tags tag);
 }

@@ -24,7 +24,6 @@ import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -160,12 +159,10 @@ final class DefaultBuilderConfig {
                     StringBuilder key = new StringBuilder(e.getKey());
                     ConfigValue configValue = e.getValue();
 
-                    while (configValue != null &&
-                        configValue.valueType() == ConfigValueType.OBJECT) {
-                      Set<String> keySet =
-                          ((ConfigObject) configValue).keySet();
-                      String nextKey = keySet.iterator()
-                                          .next();
+                    while (configValue != null
+                        && configValue.valueType() == ConfigValueType.OBJECT) {
+                      Set<String> keySet = ((ConfigObject) configValue).keySet();
+                      String nextKey = keySet.iterator().next();
                       key.append(".").append(nextKey);
                       configValue = ((ConfigObject) configValue).get(nextKey);
                     }
