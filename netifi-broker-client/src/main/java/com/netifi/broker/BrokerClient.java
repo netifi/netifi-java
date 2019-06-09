@@ -18,12 +18,15 @@ package com.netifi.broker;
 import com.netifi.broker.discovery.DiscoveryStrategy;
 import com.netifi.broker.frames.DestinationSetupFlyweight;
 import com.netifi.broker.info.Broker;
+import com.netifi.broker.reactor.NetifiLoopResources;
+import com.netifi.broker.reactor.NettyEventLoopGroupScheduler;
 import com.netifi.broker.rsocket.BrokerSocket;
 import com.netifi.broker.rsocket.NamedRSocketClientWrapper;
 import com.netifi.broker.rsocket.NamedRSocketServiceWrapper;
 import com.netifi.broker.rsocket.transport.BrokerAddressSelectors;
 import com.netifi.common.tags.Tag;
 import com.netifi.common.tags.Tags;
+import com.netifi.transport.shm.SharedMemoryClientTransport;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.ssl.OpenSsl;
@@ -39,15 +42,6 @@ import io.rsocket.rpc.rsocket.RequestHandlingRSocket;
 import io.rsocket.transport.ClientTransport;
 import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.transport.netty.client.WebsocketClientTransport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import reactor.core.Exceptions;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.MonoProcessor;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
-import reactor.netty.tcp.TcpClient;
-
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -58,6 +52,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import reactor.core.Exceptions;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.MonoProcessor;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
+import reactor.netty.tcp.TcpClient;
 
 /** This is where the magic happens */
 public class BrokerClient implements Closeable {
@@ -126,14 +128,6 @@ public class BrokerClient implements Closeable {
             discoveryStrategy);
   }
 
-  public String getGroup() {
-    return group;
-  }
-
-  public String getDestination() {
-    return destination;
-  }
-
   @Deprecated
   public static Builder builder() {
     return new Builder();
@@ -157,6 +151,14 @@ public class BrokerClient implements Closeable {
 
   private static String defaultDestination() {
     return UUID.randomUUID().toString();
+  }
+
+  public String getGroup() {
+    return group;
+  }
+
+  public String getDestination() {
+    return destination;
   }
 
   @Override
@@ -538,8 +540,13 @@ public class BrokerClient implements Closeable {
 
   public static class ShmBuilder extends CommonBuilder<ShmBuilder> {
     private File sharedMemoryDirectory;
-    private Scheduler workerScheduler = Schedulers.parallel();
+    private Scheduler workerScheduler;
     private Scheduler heartbeatScheduler = Schedulers.single();
+
+    public ShmBuilder() {
+      NetifiLoopResources instance = NetifiLoopResources.getInstance();
+      this.workerScheduler = new NettyEventLoopGroupScheduler(instance.onServer(true));
+    }
 
     public ShmBuilder sharedMemoryDirectory(String sharedMemoryDirectory) {
       this.sharedMemoryDirectory = new File(sharedMemoryDirectory);
@@ -631,11 +638,11 @@ public class BrokerClient implements Closeable {
       if (sharedMemoryDirectory == null || !sharedMemoryDirectory.exists()) {
         throw new IllegalStateException("shared memory directory does not exist");
       }
-      
+
       if (!sharedMemoryDirectory.isDirectory()) {
         throw new IllegalStateException(sharedMemoryDirectory.getName() + " is not a directory");
       }
-      
+
       logger.info("registering with netifi with group {}", group);
 
       netifiKey = accessKey + group;
@@ -644,7 +651,14 @@ public class BrokerClient implements Closeable {
     public BrokerClient build() {
       prebuild();
 
-      Function<SocketAddress, ClientTransport> clientTransportFactory = address -> null;
+      Function<SocketAddress, ClientTransport> clientTransportFactory =
+          address -> {
+            SharedMemoryClientTransport transport =
+                new SharedMemoryClientTransport(
+                    sharedMemoryDirectory.toPath(), workerScheduler, heartbeatScheduler);
+
+            return transport;
+          };
 
       return BROKERCLIENT.computeIfAbsent(
           netifiKey,
@@ -656,6 +670,7 @@ public class BrokerClient implements Closeable {
                     connectionIdSeed,
                     inetAddress,
                     group,
+                    destination,
                     additionalFlags,
                     tags,
                     keepalive,
@@ -665,7 +680,7 @@ public class BrokerClient implements Closeable {
                     socketAddresses,
                     BrokerAddressSelectors.TCP_ADDRESS,
                     clientTransportFactory,
-                    poolSize,
+                    1,
                     tracerSupplier,
                     discoveryStrategy);
             brokerClient.onClose.doFinally(s -> BROKERCLIENT.remove(netifiKey)).subscribe();
@@ -717,7 +732,10 @@ public class BrokerClient implements Closeable {
       if (sslDisabled) {
         clientTransportFactory =
             address -> {
-              TcpClient client = TcpClient.create().addressSupplier(() -> address);
+              TcpClient client =
+                  TcpClient.create()
+                      .addressSupplier(() -> address)
+                      .runOn(NetifiLoopResources.getInstance());
               return WebsocketClientTransport.create(client);
             };
       } else {
@@ -726,7 +744,10 @@ public class BrokerClient implements Closeable {
           clientTransportFactory =
               address -> {
                 TcpClient client =
-                    TcpClient.create().addressSupplier(() -> address).secure(sslContext);
+                    TcpClient.create()
+                        .addressSupplier(() -> address)
+                        .secure(sslContext)
+                        .runOn(NetifiLoopResources.getInstance());
                 return WebsocketClientTransport.create(client);
               };
         } catch (Exception sslException) {
@@ -806,7 +827,11 @@ public class BrokerClient implements Closeable {
       if (sslDisabled) {
         clientTransportFactory =
             address -> {
-              TcpClient client = TcpClient.create().addressSupplier(() -> address);
+              TcpClient client =
+                  TcpClient.create()
+                      .addressSupplier(() -> address)
+                      .runOn(NetifiLoopResources.getInstance());
+              ;
               return TcpClientTransport.create(client);
             };
       } else {
@@ -815,7 +840,11 @@ public class BrokerClient implements Closeable {
           clientTransportFactory =
               address -> {
                 TcpClient client =
-                    TcpClient.create().addressSupplier(() -> address).secure(sslContext);
+                    TcpClient.create()
+                        .addressSupplier(() -> address)
+                        .secure(sslContext)
+                        .runOn(NetifiLoopResources.getInstance());
+                ;
                 return TcpClientTransport.create(client);
               };
         } catch (Exception sslException) {
@@ -1159,7 +1188,11 @@ public class BrokerClient implements Closeable {
         if (sslDisabled) {
           clientTransportFactory =
               address -> {
-                TcpClient client = TcpClient.create().addressSupplier(() -> address);
+                TcpClient client =
+                    TcpClient.create()
+                        .addressSupplier(() -> address)
+                        .runOn(NetifiLoopResources.getInstance());
+                ;
                 return TcpClientTransport.create(client);
               };
         } else {
@@ -1180,7 +1213,11 @@ public class BrokerClient implements Closeable {
             clientTransportFactory =
                 address -> {
                   TcpClient client =
-                      TcpClient.create().addressSupplier(() -> address).secure(sslContext);
+                      TcpClient.create()
+                          .addressSupplier(() -> address)
+                          .secure(sslContext)
+                          .runOn(NetifiLoopResources.getInstance());
+                  ;
                   return TcpClientTransport.create(client);
                 };
           } catch (Exception sslException) {

@@ -17,6 +17,9 @@ dependencies {
     compile 'io.rsocket.rpc:rsocket-rpc-core'
     compile 'io.rsocket:rsocket-transport-netty'
     compile "io.netty:netty-tcnative:${nettyTcnativeVersion}:linux-x86_64"
+    compile "io.netty:netty-tcnative:${nettyTcnativeVersion}:osx-x86_64"
+    //compileOnly "io.netty:netty-tcnative-boringssl-static' + os_suffix"
+    compile "com.netifi:netifi-transport-shm"
 
     compileOnly 'javax.inject:javax.inject'
 
