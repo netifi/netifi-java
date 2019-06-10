@@ -65,9 +65,15 @@ subprojects {
     targetCompatibility = 1.8
 
     repositories {
-        mavenLocal()
         maven {
-            url 'https://sonatype.netifiinc.com/repository/jcenter/'
+            url 'https://sonatype.netifiinc.com/repository/netifi-maven-snapshots/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
+        maven {
+            url 'https://sonatype.netifiinc.com/repository/netifi-maven-releases/'
             credentials {
                 username = "${netifiReadOnlyUsername}"
                 password = "${netifiReadOnlyPassword}"
@@ -75,6 +81,13 @@ subprojects {
         }
         maven {
             url 'https://sonatype.netifiinc.com/repository/maven-central/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
+        maven {
+            url 'https://sonatype.netifiinc.com/repository/jcenter/'
             credentials {
                 username = "${netifiReadOnlyUsername}"
                 password = "${netifiReadOnlyPassword}"
