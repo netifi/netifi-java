@@ -18,11 +18,7 @@ package com.netifi.broker.integration;
 import com.google.protobuf.Empty;
 import com.netifi.broker.BrokerClient;
 import com.netifi.broker.rsocket.BrokerSocket;
-import com.netifi.broker.testing.protobuf.SimpleRequest;
-import com.netifi.broker.testing.protobuf.SimpleResponse;
-import com.netifi.broker.testing.protobuf.SimpleService;
-import com.netifi.broker.testing.protobuf.SimpleServiceClient;
-import com.netifi.broker.testing.protobuf.SimpleServiceServer;
+import com.netifi.broker.testing.protobuf.*;
 import com.netifi.common.tags.Tags;
 import io.netty.buffer.ByteBuf;
 import java.time.Duration;
@@ -31,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -41,12 +36,11 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-public class BrokerClientIntegrationTest {
+public class SharedMemoryAndTcpBrokerClientIntegrationTest {
 
   private static final long accessKey = 9007199254740991L;
   private static final String accessToken = "kTBDVtfRBO4tHOnZzSyY5ym2kfY=";
   private static final String host = "localhost";
-  private static final int port = 8001;
   private static final int server_port = 8001;
   private static BrokerClient server;
   private static BrokerClient brokerClient;
@@ -67,30 +61,18 @@ public class BrokerClientIntegrationTest {
             .build();
 
     brokerClient =
-        BrokerClient.tcp()
-            .keepalive(false)
+        BrokerClient.shm()
+            .sharedMemoryDirectory("/tmp/broker_shm")
             .group("test.brokerClient")
             .destination("brokerClient")
             .accessKey(accessKey)
             .accessToken(accessToken)
-            .host(host)
-            .port(port)
-            .poolSize(1)
             .build();
 
     server.addService(
         new SimpleServiceServer(new DefaultSimpleService(), Optional.empty(), Optional.empty()));
 
     brokerSocket = brokerClient.groupServiceSocket("test.server", Tags.empty());
-  }
-
-  @Test
-  public void shouldReturnCorrectStatusWhenNetifiHasBeenDisposed() {
-    server.dispose();
-    brokerClient.dispose();
-
-    Assert.assertTrue(server.isDisposed());
-    Assert.assertTrue(brokerClient.isDisposed());
   }
 
   @Test
@@ -122,21 +104,16 @@ public class BrokerClientIntegrationTest {
   @Test
   @Ignore
   public void testUnaryRpc_multiple() {
-    System.out.println(1);
     doTest(1_000_000);
-    System.out.println(2);
     doTest(1_000_000);
-    System.out.println(3);
     doTest(1_000_000);
-    System.out.println(4);
     doTest(1_000_000);
-    System.out.println(5);
     doTest(1_000_000);
-    System.out.println(6);
     doTest(1_000_000);
   }
 
   public void doTest(int count) {
+    System.out.println(System.currentTimeMillis() + " - starting count -> " + count);
     SimpleServiceClient simpleServiceClient = new SimpleServiceClient(brokerSocket);
     long start = System.nanoTime();
     Flux.range(1, count)

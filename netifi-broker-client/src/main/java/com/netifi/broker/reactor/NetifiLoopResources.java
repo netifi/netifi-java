@@ -26,6 +26,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.FastThreadLocalThread;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import reactor.netty.resources.LoopResources;
 
 public class NetifiLoopResources implements LoopResources {
@@ -57,8 +58,19 @@ public class NetifiLoopResources implements LoopResources {
     return LazyHolder.getInstance().serverChannel;
   }
 
+  private static class NetifiThreadFactory implements ThreadFactory {
+    private AtomicInteger counter = new AtomicInteger();
+
+    @Override
+    public Thread newThread(Runnable r) {
+      return new FastThreadLocalThread(r, "netifi-loop-" + counter.incrementAndGet());
+    }
+  }
+
   private static class LazyHolder {
     private static final LazyHolder INSTANCE = new LazyHolder();
+
+    private static final NetifiThreadFactory FACTORY = new NetifiThreadFactory();
 
     private final EventLoopGroup eventLoopGroup;
 
@@ -70,14 +82,14 @@ public class NetifiLoopResources implements LoopResources {
 
     private LazyHolder() {
       if (isEpollPresent()) {
-        eventLoopGroup = new EpollEventLoopGroup(0, (ThreadFactory) FastThreadLocalThread::new);
+        eventLoopGroup = new EpollEventLoopGroup(0, FACTORY);
         serverChannel = EpollServerSocketChannel.class;
         channel = EpollSocketChannel.class;
         datagramChannel = EpollDatagramChannel.class;
       } /*else if (isKQueuePresent()) {
           eventLoopGroup = new KQueueEventLoopGroup();
         }*/ else {
-        eventLoopGroup = new NioEventLoopGroup(0, (ThreadFactory) FastThreadLocalThread::new);
+        eventLoopGroup = new NioEventLoopGroup(0, FACTORY);
         serverChannel = NioServerSocketChannel.class;
         channel = NioSocketChannel.class;
         datagramChannel = NioDatagramChannel.class;

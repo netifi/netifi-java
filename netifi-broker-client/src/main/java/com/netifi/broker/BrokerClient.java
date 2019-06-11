@@ -42,6 +42,15 @@ import io.rsocket.rpc.rsocket.RequestHandlingRSocket;
 import io.rsocket.transport.ClientTransport;
 import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.transport.netty.client.WebsocketClientTransport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import reactor.core.Exceptions;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.MonoProcessor;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
+import reactor.netty.tcp.TcpClient;
+
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -52,14 +61,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import reactor.core.Exceptions;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.MonoProcessor;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
-import reactor.netty.tcp.TcpClient;
 
 /** This is where the magic happens */
 public class BrokerClient implements Closeable {
@@ -541,14 +542,16 @@ public class BrokerClient implements Closeable {
   public static class ShmBuilder extends CommonBuilder<ShmBuilder> {
     private File sharedMemoryDirectory;
     private Scheduler workerScheduler;
-    private Scheduler heartbeatScheduler = Schedulers.single();
+    private Scheduler heartbeatScheduler;
 
     public ShmBuilder() {
       NetifiLoopResources instance = NetifiLoopResources.getInstance();
       this.workerScheduler = new NettyEventLoopGroupScheduler(instance.onServer(true));
+      this.heartbeatScheduler = LazyHolder.getInstance().scheduler;
     }
 
     public ShmBuilder sharedMemoryDirectory(String sharedMemoryDirectory) {
+      this.poolSize = Runtime.getRuntime().availableProcessors();
       this.sharedMemoryDirectory = new File(sharedMemoryDirectory);
       return this;
     }
@@ -570,11 +573,6 @@ public class BrokerClient implements Closeable {
 
     @Override
     public ShmBuilder discoveryStrategy(DiscoveryStrategy discoveryStrategy) {
-      return this;
-    }
-
-    @Override
-    public ShmBuilder poolSize(int poolSize) {
       return this;
     }
 
@@ -660,6 +658,11 @@ public class BrokerClient implements Closeable {
             return transport;
           };
 
+      List<SocketAddress> addresses = new ArrayList<>();
+      for (int i = 0; i < poolSize; i++) {
+        addresses.add(InetSocketAddress.createUnresolved("shared-memory-" + i, 1));
+      }
+
       return BROKERCLIENT.computeIfAbsent(
           netifiKey,
           _k -> {
@@ -677,16 +680,30 @@ public class BrokerClient implements Closeable {
                     tickPeriodSeconds,
                     ackTimeoutSeconds,
                     missedAcks,
-                    socketAddresses,
-                    BrokerAddressSelectors.TCP_ADDRESS,
+                    addresses,
+                    BrokerAddressSelectors.SHM_ADDRESS,
                     clientTransportFactory,
                     1,
                     tracerSupplier,
-                    discoveryStrategy);
+                    null);
             brokerClient.onClose.doFinally(s -> BROKERCLIENT.remove(netifiKey)).subscribe();
 
             return brokerClient;
           });
+    }
+
+    public static class LazyHolder {
+      private static LazyHolder INSTANCE = new LazyHolder();
+
+      private Scheduler scheduler;
+
+      private LazyHolder() {
+        scheduler = Schedulers.newSingle("netifi-shm-heartbeat", true);
+      }
+
+      public static LazyHolder getInstance() {
+        return INSTANCE;
+      }
     }
   }
 

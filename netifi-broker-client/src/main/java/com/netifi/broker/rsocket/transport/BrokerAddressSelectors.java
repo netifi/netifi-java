@@ -16,14 +16,18 @@
 package com.netifi.broker.rsocket.transport;
 
 import com.netifi.broker.info.Broker;
+
 import java.net.InetSocketAddress;
 import java.util.function.Function;
 
 public class BrokerAddressSelectors {
+  private static final InetSocketAddress SHM_INET_ADDRESS =
+      InetSocketAddress.createUnresolved("shared-memory", 1);
   public static Function<Broker, InetSocketAddress> TCP_ADDRESS =
       broker -> InetSocketAddress.createUnresolved(broker.getTcpAddress(), broker.getTcpPort());
   public static Function<Broker, InetSocketAddress> WEBSOCKET_ADDRESS =
       broker ->
           InetSocketAddress.createUnresolved(
               broker.getWebSocketAddress(), broker.getWebSocketPort());
+  public static Function<Broker, InetSocketAddress> SHM_ADDRESS = broker -> SHM_INET_ADDRESS;
 }
