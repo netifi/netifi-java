@@ -49,8 +49,6 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -246,7 +244,8 @@ public class DefaultBrokerService implements BrokerService, Disposable {
   private synchronized void reconcileSuppliers(Set<Broker> incomingBrokers) {
     if (!suppliers.isEmpty()) {
       Set<Broker> existingBrokers =
-          suppliers.stream()
+          suppliers
+              .stream()
               .map(WeightedClientTransportSupplier::getBroker)
               .collect(Collectors.toSet());
 
@@ -310,7 +309,8 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     synchronized (this) {
       missed++;
     }
-    seedAddresses.stream()
+    seedAddresses
+        .stream()
         .map(
             address -> {
               try {
@@ -380,7 +380,8 @@ public class DefaultBrokerService implements BrokerService, Disposable {
   private void handleJoinEvent(Broker broker) {
     Id incomingBrokerId = broker.getBrokerId();
     Optional<WeightedClientTransportSupplier> first =
-        suppliers.stream()
+        suppliers
+            .stream()
             .filter(
                 supplier -> Objects.equals(supplier.getBroker().getBrokerId(), incomingBrokerId))
             .findAny();
@@ -407,7 +408,8 @@ public class DefaultBrokerService implements BrokerService, Disposable {
   }
 
   private void handleLeaveEvent(Broker broker) {
-    suppliers.stream()
+    suppliers
+        .stream()
         .filter(
             supplier -> Objects.equals(supplier.getBroker().getBrokerId(), broker.getBrokerId()))
         .findAny()
@@ -479,7 +481,11 @@ public class DefaultBrokerService implements BrokerService, Disposable {
           _a = true;
         }
 
-        createConnection = _a || (size < poolSize && (System.currentTimeMillis() - selectRefreshTimeout) > selectRefreshTimeoutDuration);
+        createConnection =
+            _a
+                || (size < poolSize
+                    && (System.currentTimeMillis() - selectRefreshTimeout)
+                        > selectRefreshTimeoutDuration);
       }
 
       if (createConnection) {
