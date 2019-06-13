@@ -49,6 +49,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -94,7 +95,8 @@ public class DefaultBrokerService implements BrokerService, Disposable {
   private final int inactivityFactor = DEFAULT_INACTIVITY_FACTOR;
   private final BrokerInfoServiceClient client;
   private final MonoProcessor<Void> onClose;
-  private final int selectRefresh;
+  private final long selectRefreshTimeout;
+  private final long selectRefreshTimeoutDuration;
   private final DiscoveryStrategy discoveryStrategy;
   private int missed = 0;
   private volatile int poolCount = 0;
@@ -147,7 +149,8 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     this.addressSelector = addressSelector;
     this.clientTransportFactory = clientTransportFactory;
     this.poolSize = poolSize;
-    this.selectRefresh = poolSize == 1 ? 1 : poolSize / 2;
+    this.selectRefreshTimeout = System.currentTimeMillis();
+    this.selectRefreshTimeoutDuration = TimeUnit.SECONDS.toMillis(10);
     this.keepalive = keepalive;
     this.tickPeriodSeconds = tickPeriodSeconds;
     this.ackTimeoutSeconds = ackTimeoutSeconds;
@@ -462,12 +465,17 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     List<WeightedReconnectingRSocket> _m;
     int r;
     for (; ; ) {
-      boolean createConnection;
+      final boolean createConnection;
+      final int size;
       synchronized (this) {
         r = missed;
         _m = members;
+        size = _m.size();
 
-        createConnection = members.size() < selectRefresh;
+        createConnection =
+            size < poolSize
+                && (System.currentTimeMillis() - selectRefreshTimeout)
+                    > selectRefreshTimeoutDuration;
       }
 
       if (createConnection) {
@@ -475,7 +483,6 @@ public class DefaultBrokerService implements BrokerService, Disposable {
         continue;
       }
 
-      int size = _m.size();
       if (size == 1) {
         rSocket = _m.get(0);
       } else {
