@@ -473,9 +473,10 @@ public class DefaultBrokerService implements BrokerService, Disposable {
         size = _m.size();
 
         createConnection =
-            size < poolSize
-                && (System.currentTimeMillis() - selectRefreshTimeout)
-                    > selectRefreshTimeoutDuration;
+            size == 0
+                || (size < poolSize
+                    && (System.currentTimeMillis() - selectRefreshTimeout)
+                        > selectRefreshTimeoutDuration);
       }
 
       if (createConnection) {
