@@ -50,6 +50,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -150,7 +151,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     this.clientTransportFactory = clientTransportFactory;
     this.poolSize = poolSize;
     this.selectRefreshTimeout = System.currentTimeMillis();
-    this.selectRefreshTimeoutDuration = TimeUnit.SECONDS.toMillis(10);
+    this.selectRefreshTimeoutDuration = 10_000;
     this.keepalive = keepalive;
     this.tickPeriodSeconds = tickPeriodSeconds;
     this.ackTimeoutSeconds = ackTimeoutSeconds;
@@ -245,8 +246,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
   private synchronized void reconcileSuppliers(Set<Broker> incomingBrokers) {
     if (!suppliers.isEmpty()) {
       Set<Broker> existingBrokers =
-          suppliers
-              .stream()
+          suppliers.stream()
               .map(WeightedClientTransportSupplier::getBroker)
               .collect(Collectors.toSet());
 
@@ -310,8 +310,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     synchronized (this) {
       missed++;
     }
-    seedAddresses
-        .stream()
+    seedAddresses.stream()
         .map(
             address -> {
               try {
@@ -381,8 +380,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
   private void handleJoinEvent(Broker broker) {
     Id incomingBrokerId = broker.getBrokerId();
     Optional<WeightedClientTransportSupplier> first =
-        suppliers
-            .stream()
+        suppliers.stream()
             .filter(
                 supplier -> Objects.equals(supplier.getBroker().getBrokerId(), incomingBrokerId))
             .findAny();
@@ -409,8 +407,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
   }
 
   private void handleLeaveEvent(Broker broker) {
-    suppliers
-        .stream()
+    suppliers.stream()
         .filter(
             supplier -> Objects.equals(supplier.getBroker().getBrokerId(), broker.getBrokerId()))
         .findAny()
@@ -460,6 +457,8 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     }
   }
 
+  private boolean attemptInitialConnection = false;
+
   public RSocket selectRSocket() {
     RSocket rSocket;
     List<WeightedReconnectingRSocket> _m;
@@ -470,16 +469,21 @@ public class DefaultBrokerService implements BrokerService, Disposable {
       synchronized (this) {
         r = missed;
         _m = members;
+
         size = _m.size();
 
-        createConnection =
-            size == 0
-                || (size < poolSize
-                    && (System.currentTimeMillis() - selectRefreshTimeout)
-                        > selectRefreshTimeoutDuration);
+        boolean _a = false;
+        if (size == 0) {
+          System.out.println("FIRST CONNECTION >>>>>>>>>");
+          attemptInitialConnection = true;
+          _a = true;
+        }
+
+        createConnection = _a || (size < poolSize && (System.currentTimeMillis() - selectRefreshTimeout) > selectRefreshTimeoutDuration);
       }
 
       if (createConnection) {
+        System.out.println("HERE>>>>> ");
         createConnection();
         continue;
       }
