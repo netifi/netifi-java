@@ -86,19 +86,19 @@ public class WeightedReconnectingRSocket implements WeightedRSocket {
   private MonoProcessor<RSocket> currentSink;
 
   WeightedReconnectingRSocket(
-      RSocket requestHandlingRSocket,
-      Supplier<Payload> setupPayloadSupplier,
-      BooleanSupplier running,
-      Supplier<WeightedClientTransportSupplier> transportSupplier,
-      boolean keepalive,
-      long tickPeriodSeconds,
-      long ackTimeoutSeconds,
-      int missedAcks,
-      long accessKey,
-      ByteBuf accessToken,
-      Quantile lowerQuantile,
-      Quantile higherQuantile,
-      int inactivityFactor) {
+      final RSocket requestHandlingRSocket,
+      final Supplier<Payload> setupPayloadSupplier,
+      final BooleanSupplier running,
+      final Supplier<WeightedClientTransportSupplier> transportSupplier,
+      final boolean keepalive,
+      final long tickPeriodSeconds,
+      final long ackTimeoutSeconds,
+      final int missedAcks,
+      final long accessKey,
+      final ByteBuf accessToken,
+      final Quantile lowerQuantile,
+      final Quantile higherQuantile,
+      final int inactivityFactor) {
     this.transportSupplier = transportSupplier;
     this.lowerQuantile = lowerQuantile;
     this.higherQuantile = higherQuantile;
@@ -127,19 +127,19 @@ public class WeightedReconnectingRSocket implements WeightedRSocket {
   }
 
   public static WeightedReconnectingRSocket newInstance(
-      RSocket requestHandlingRSocket,
-      Supplier<Payload> setupPayloadSupplier,
-      BooleanSupplier running,
-      Supplier<WeightedClientTransportSupplier> transportSupplier,
-      boolean keepalive,
-      long tickPeriodSeconds,
-      long ackTimeoutSeconds,
-      int missedAcks,
-      long accessKey,
-      ByteBuf accessToken,
-      Quantile lowerQuantile,
-      Quantile higherQuantile,
-      int inactivityFactor) {
+      final RSocket requestHandlingRSocket,
+      final Supplier<Payload> setupPayloadSupplier,
+      final BooleanSupplier running,
+      final Supplier<WeightedClientTransportSupplier> transportSupplier,
+      final boolean keepalive,
+      final long tickPeriodSeconds,
+      final long ackTimeoutSeconds,
+      final int missedAcks,
+      final long accessKey,
+      final ByteBuf accessToken,
+      final Quantile lowerQuantile,
+      final Quantile higherQuantile,
+      final int inactivityFactor) {
     WeightedReconnectingRSocket rSocket =
         new WeightedReconnectingRSocket(
             requestHandlingRSocket,
