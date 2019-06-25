@@ -62,10 +62,10 @@ import reactor.core.publisher.MonoProcessor;
 
 public class DefaultBrokerService implements BrokerService, Disposable {
   private static final Logger logger = LoggerFactory.getLogger(DefaultBrokerService.class);
-  private static final double DEFAULT_EXP_FACTOR = 4.0;
+  private static final double EXP_FACTOR = 4.0;
   private static final double DEFAULT_LOWER_QUANTILE = 0.5;
   private static final double DEFAULT_HIGHER_QUANTILE = 0.8;
-  private static final int DEFAULT_INACTIVITY_FACTOR = 500;
+  private static final int INACTIVITY_FACTOR = 500;
   private static final int EFFORT = 5;
 
   private final Quantile lowerQuantile = new FrugalQuantile(DEFAULT_LOWER_QUANTILE);
@@ -90,11 +90,10 @@ public class DefaultBrokerService implements BrokerService, Disposable {
   private final Function<Broker, InetSocketAddress> addressSelector;
   private final Function<SocketAddress, ClientTransport> clientTransportFactory;
   private final int poolSize;
-  private final double expFactor = DEFAULT_EXP_FACTOR;
-  private final int inactivityFactor = DEFAULT_INACTIVITY_FACTOR;
   private final BrokerInfoServiceClient client;
   private final MonoProcessor<Void> onClose;
-  private final int selectRefresh;
+  private final long selectRefreshTimeout;
+  private final long selectRefreshTimeoutDuration;
   private final DiscoveryStrategy discoveryStrategy;
   private int missed = 0;
   private volatile int poolCount = 0;
@@ -151,7 +150,8 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     this.addressSelector = addressSelector;
     this.clientTransportFactory = clientTransportFactory;
     this.poolSize = poolSize;
-    this.selectRefresh = poolSize == 1 ? 1 : poolSize / 2;
+    this.selectRefreshTimeout = System.currentTimeMillis();
+    this.selectRefreshTimeoutDuration = 10_000;
     this.keepalive = keepalive;
     this.tickPeriodSeconds = tickPeriodSeconds;
     this.ackTimeoutSeconds = ackTimeoutSeconds;
@@ -221,7 +221,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     onClose.doFinally(s -> subscribe.dispose()).subscribe();
   }
 
-  private Supplier<Payload> createSetupPayloadSupplier(String connectionIdSuffix) {
+  private Supplier<Payload> createSetupPayloadSupplier(final String connectionIdSuffix) {
     final StringJoiner connectionId = new StringJoiner("-");
     if (connectionIdSeed != null) {
       connectionId.add(connectionIdSeed);
@@ -243,7 +243,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     return () -> ByteBufPayload.create(Unpooled.EMPTY_BUFFER, Unpooled.copiedBuffer(metadata));
   }
 
-  private synchronized void reconcileSuppliers(Set<Broker> incomingBrokers) {
+  private synchronized void reconcileSuppliers(final Set<Broker> incomingBrokers) {
     if (!suppliers.isEmpty()) {
       Set<Broker> existingBrokers =
           suppliers
@@ -364,9 +364,9 @@ public class DefaultBrokerService implements BrokerService, Disposable {
         .forEach(suppliers::add);
   }
 
-  private synchronized void handleBrokerEvent(Event event) {
+  private synchronized void handleBrokerEvent(final Event event) {
     logger.info("received broker event {} - {}", event.getType(), event.toString());
-    Broker broker = event.getBroker();
+    final Broker broker = event.getBroker();
     switch (event.getType()) {
       case JOIN:
         handleJoinEvent(broker);
@@ -379,9 +379,9 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     }
   }
 
-  private void handleJoinEvent(Broker broker) {
-    Id incomingBrokerId = broker.getBrokerId();
-    Optional<WeightedClientTransportSupplier> first =
+  private void handleJoinEvent(final Broker broker) {
+    final Id incomingBrokerId = broker.getBrokerId();
+    final Optional<WeightedClientTransportSupplier> first =
         suppliers
             .stream()
             .filter(
@@ -391,7 +391,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     if (!first.isPresent()) {
       logger.info("adding transport supplier to broker {}", broker);
 
-      WeightedClientTransportSupplier s =
+      final WeightedClientTransportSupplier s =
           new WeightedClientTransportSupplier(broker, addressSelector, clientTransportFactory);
       suppliers.add(s);
 
@@ -409,7 +409,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     }
   }
 
-  private void handleLeaveEvent(Broker broker) {
+  private void handleLeaveEvent(final Broker broker) {
     suppliers
         .stream()
         .filter(
@@ -437,7 +437,7 @@ public class DefaultBrokerService implements BrokerService, Disposable {
         accessToken,
         lowerQuantile,
         higherQuantile,
-        inactivityFactor);
+        INACTIVITY_FACTOR);
   }
 
   @Override
@@ -461,52 +461,83 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     }
   }
 
+  private boolean attemptInitialConnection = true;
+
   public RSocket selectRSocket() {
     RSocket rSocket;
     List<WeightedReconnectingRSocket> _m;
     int r;
     for (; ; ) {
-      boolean createConnection;
+      final int size;
       synchronized (this) {
         r = missed;
         _m = members;
 
-        createConnection = members.size() < selectRefresh;
-      }
+        int _s = _m.size();
 
-      if (createConnection) {
-        createConnection();
-        continue;
-      }
-
-      int size = _m.size();
-      if (size == 1) {
-        rSocket = _m.get(0);
-      } else {
-        WeightedReconnectingRSocket rsc1 = null;
-        WeightedReconnectingRSocket rsc2 = null;
-
-        for (int i = 0; i < EFFORT; i++) {
-          int i1 = ThreadLocalRandom.current().nextInt(size);
-          int i2 = ThreadLocalRandom.current().nextInt(size - 1);
-
-          if (i2 >= i1) {
-            i2++;
-          }
-          rsc1 = _m.get(i1);
-          rsc2 = _m.get(i2);
-          if (rsc1.availability() > 0.0 && rsc2.availability() > 0.0) {
-            break;
-          }
+        boolean _a = false;
+        if (attemptInitialConnection && _s == 0) {
+          attemptInitialConnection = false;
+          _a = true;
         }
 
-        double w1 = algorithmicWeight(rsc1);
-        double w2 = algorithmicWeight(rsc2);
-        if (w1 < w2) {
-          rSocket = rsc2;
-        } else {
-          rSocket = rsc1;
-        }
+        size =
+            _a
+                    || (_s < poolSize
+                        && (System.currentTimeMillis() - selectRefreshTimeout)
+                            > selectRefreshTimeoutDuration)
+                ? -1
+                : _s;
+      }
+
+      switch (size) {
+        case -1:
+          createConnection();
+          continue;
+        case 1:
+          rSocket = _m.get(0);
+          break;
+        case 2:
+          {
+            WeightedReconnectingRSocket rsc1 = _m.get(0);
+            WeightedReconnectingRSocket rsc2 = _m.get(1);
+
+            double w1 = algorithmicWeight(rsc1, lowerQuantile, higherQuantile);
+            double w2 = algorithmicWeight(rsc2, lowerQuantile, higherQuantile);
+            if (w1 < w2) {
+              rSocket = rsc2;
+            } else {
+              rSocket = rsc1;
+            }
+          }
+          break;
+        default:
+          {
+            WeightedReconnectingRSocket rsc1 = null;
+            WeightedReconnectingRSocket rsc2 = null;
+
+            for (int i = 0; i < EFFORT; i++) {
+              int i1 = ThreadLocalRandom.current().nextInt(size);
+              int i2 = ThreadLocalRandom.current().nextInt(size - 1);
+
+              if (i2 >= i1) {
+                i2++;
+              }
+              rsc1 = _m.get(i1);
+              rsc2 = _m.get(i2);
+              if (rsc1.availability() > 0.0 && rsc2.availability() > 0.0) {
+                break;
+              }
+            }
+
+            double w1 = algorithmicWeight(rsc1, lowerQuantile, higherQuantile);
+            double w2 = algorithmicWeight(rsc2, lowerQuantile, higherQuantile);
+            if (w1 < w2) {
+              rSocket = rsc2;
+            } else {
+              rSocket = rsc1;
+            }
+          }
       }
 
       synchronized (this) {
@@ -519,19 +550,20 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     return rSocket;
   }
 
-  private double algorithmicWeight(WeightedRSocket socket) {
+  private static double algorithmicWeight(
+      final WeightedRSocket socket, final Quantile lowerQuantile, final Quantile higherQuantile) {
     if (socket == null || socket.availability() == 0.0) {
       return 0.0;
     }
-    int pendings = socket.pending();
+    final int pendings = socket.pending();
     double latency = socket.predictedLatency();
 
-    double low = lowerQuantile.estimation();
-    double high =
+    final double low = lowerQuantile.estimation();
+    final double high =
         Math.max(
             higherQuantile.estimation(),
             low * 1.001); // ensure higherQuantile > lowerQuantile + .1%
-    double bandWidth = Math.max(high - low, 1);
+    final double bandWidth = Math.max(high - low, 1);
 
     if (latency < low) {
       latency /= calculateFactor(low, latency, bandWidth);
@@ -542,17 +574,17 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     return socket.availability() * 1.0 / (1.0 + latency * (pendings + 1));
   }
 
-  private double calculateFactor(double u, double l, double bandWidth) {
-    double alpha = (u - l) / bandWidth;
-    return Math.pow(1 + alpha, expFactor);
+  private static double calculateFactor(final double u, final double l, final double bandWidth) {
+    final double alpha = (u - l) / bandWidth;
+    return Math.pow(1 + alpha, EXP_FACTOR);
   }
 
   private WeightedClientTransportSupplier selectClientTransportSupplier() {
     WeightedClientTransportSupplier supplier;
     int c;
     for (; ; ) {
-      boolean selectTransports;
-      List<WeightedClientTransportSupplier> _s;
+      final boolean selectTransports;
+      final List<WeightedClientTransportSupplier> _s;
       synchronized (this) {
         c = missed;
         _s = suppliers;
@@ -565,12 +597,12 @@ public class DefaultBrokerService implements BrokerService, Disposable {
         continue;
       }
 
-      int size = _s.size();
+      final int size = _s.size();
       if (size == 1) {
         supplier = _s.get(0);
       } else {
-        WeightedClientTransportSupplier supplier1 = null;
-        WeightedClientTransportSupplier supplier2 = null;
+        WeightedClientTransportSupplier supplier1;
+        WeightedClientTransportSupplier supplier2;
 
         int i1 = ThreadLocalRandom.current().nextInt(size);
         int i2 = ThreadLocalRandom.current().nextInt(size - 1);
