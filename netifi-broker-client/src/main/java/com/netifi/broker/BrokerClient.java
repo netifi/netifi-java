@@ -91,6 +91,8 @@ public class BrokerClient implements Closeable {
       List<SocketAddress> seedAddresses,
       Function<Broker, InetSocketAddress> addressSelector,
       Function<SocketAddress, ClientTransport> clientTransportFactory,
+      RequestHandlingRSocket responder,
+      boolean responderRequiresUnwrapping,
       int poolSize,
       Supplier<Tracer> tracerSupplier,
       DiscoveryStrategy discoveryStrategy) {
@@ -99,11 +101,12 @@ public class BrokerClient implements Closeable {
     this.destination = destination;
     this.tags = tags;
     this.onClose = MonoProcessor.create();
-    this.requestHandlingRSocket = new RequestHandlingRSocket();
+    this.requestHandlingRSocket = responder;
     this.brokerService =
         new DefaultBrokerService(
             seedAddresses,
             requestHandlingRSocket,
+            responderRequiresUnwrapping,
             inetAddress,
             group,
             addressSelector,
@@ -215,9 +218,7 @@ public class BrokerClient implements Closeable {
   }
 
   public BrokerSocket groupServiceSocket(String group) {
-    Objects.requireNonNull(group);
-    Objects.requireNonNull(tags);
-    return brokerService.group(group, tags);
+    return groupServiceSocket(group, Tags.empty());
   }
 
   public BrokerSocket groupServiceSocket(String group, Tags tags) {
@@ -227,9 +228,7 @@ public class BrokerClient implements Closeable {
   }
 
   public BrokerSocket broadcastServiceSocket(String group) {
-    Objects.requireNonNull(group);
-    Objects.requireNonNull(tags);
-    return brokerService.broadcast(group, tags);
+    return broadcastServiceSocket(group, Tags.empty());
   }
 
   public BrokerSocket broadcastServiceSocket(String group, Tags tags) {
@@ -239,9 +238,7 @@ public class BrokerClient implements Closeable {
   }
 
   public BrokerSocket shardServiceSocket(String group, ByteBuf shardKey) {
-    Objects.requireNonNull(group);
-    Objects.requireNonNull(tags);
-    return brokerService.shard(group, shardKey, tags);
+    return shardServiceSocket(group, shardKey, Tags.empty());
   }
 
   public BrokerSocket shardServiceSocket(String group, ByteBuf shardKey, Tags tags) {
@@ -252,7 +249,7 @@ public class BrokerClient implements Closeable {
 
   public BrokerSocket groupNamedRSocket(String name, String group) {
     return NamedRSocketClientWrapper.wrap(
-        Objects.requireNonNull(name), groupServiceSocket(group, tags));
+        Objects.requireNonNull(name), groupServiceSocket(group, Tags.empty()));
   }
 
   public BrokerSocket groupNamedRSocket(String name, String group, Tags tags) {
@@ -262,7 +259,7 @@ public class BrokerClient implements Closeable {
 
   public BrokerSocket broadcastNamedRSocket(String name, String group) {
     return NamedRSocketClientWrapper.wrap(
-        Objects.requireNonNull(name), broadcastServiceSocket(group, tags));
+        Objects.requireNonNull(name), broadcastServiceSocket(group, Tags.empty()));
   }
 
   public BrokerSocket broadcastNamedRSocket(String name, String group, Tags tags) {
@@ -272,7 +269,7 @@ public class BrokerClient implements Closeable {
 
   public BrokerSocket shardNamedRSocket(String name, String group, ByteBuf shardKey) {
     return NamedRSocketClientWrapper.wrap(
-        Objects.requireNonNull(name), shardServiceSocket(group, shardKey, tags));
+        Objects.requireNonNull(name), shardServiceSocket(group, shardKey, Tags.empty()));
   }
 
   public BrokerSocket shardNamedRSocket(String name, String group, ByteBuf shardKey, Tags tags) {
@@ -324,6 +321,8 @@ public class BrokerClient implements Closeable {
     String netifiKey;
     List<SocketAddress> socketAddresses;
     DiscoveryStrategy discoveryStrategy = null;
+    RequestHandlingRSocket responder = new RequestHandlingRSocket(); // DEFAULT
+    boolean responderRequiresUnwrapping = true; // DEFAULT
 
     public SELF discoveryStrategy(DiscoveryStrategy discoveryStrategy) {
       this.discoveryStrategy = discoveryStrategy;
@@ -479,6 +478,12 @@ public class BrokerClient implements Closeable {
       return (SELF) this;
     }
 
+    public SELF requestHandler(RequestHandlingRSocket responder, boolean requiresUnwrapping) {
+      this.responder = responder;
+      this.responderRequiresUnwrapping = requiresUnwrapping;
+      return (SELF) this;
+    }
+
     private InetSocketAddress toInetSocketAddress(String address) {
       Objects.requireNonNull(address);
       String[] s = address.split(":");
@@ -607,6 +612,8 @@ public class BrokerClient implements Closeable {
                     socketAddresses,
                     BrokerAddressSelectors.WEBSOCKET_ADDRESS,
                     clientTransportFactory,
+                    responder,
+                    responderRequiresUnwrapping,
                     poolSize,
                     tracerSupplier,
                     discoveryStrategy);
@@ -696,6 +703,8 @@ public class BrokerClient implements Closeable {
                     socketAddresses,
                     BrokerAddressSelectors.TCP_ADDRESS,
                     clientTransportFactory,
+                    responder,
+                    responderRequiresUnwrapping,
                     poolSize,
                     tracerSupplier,
                     discoveryStrategy);
@@ -745,6 +754,8 @@ public class BrokerClient implements Closeable {
                     socketAddresses,
                     addressSelector,
                     clientTransportFactory,
+                    responder,
+                    responderRequiresUnwrapping,
                     poolSize,
                     tracerSupplier,
                     discoveryStrategy);
@@ -1089,6 +1100,8 @@ public class BrokerClient implements Closeable {
                     _s,
                     addressSelector,
                     clientTransportFactory,
+                    new RequestHandlingRSocket(),
+                    true,
                     poolSize,
                     tracerSupplier,
                     discoveryStrategy);
