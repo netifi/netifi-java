@@ -3,7 +3,7 @@ apply plugin: 'com.google.protobuf'
 description = 'Netifi Broker Client'
 
 dependencies {
-    protobuf project (':netifi-broker-info-idl')
+    protobuf 'com.netifi:netifi-broker-info-proto'
 
     compile project (':netifi-broker-auth')
     compile project (':netifi-broker-frames')

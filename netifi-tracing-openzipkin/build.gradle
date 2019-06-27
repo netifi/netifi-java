@@ -3,7 +3,7 @@ apply plugin: 'com.google.protobuf'
 description = 'Netifi Openzipkin Integration'
 
 dependencies {
-    protobuf project (':netifi-tracing-idl')
+    protobuf 'com.netifi:netifi-tracing-proto'
     compile project (':netifi-broker-client')
 
     compile 'io.rsocket.rpc:rsocket-rpc-protobuf'
