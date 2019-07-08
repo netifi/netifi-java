@@ -94,6 +94,27 @@ subprojects {
             }
         }
         maven {
+            url 'https://sonatype.netifiinc.com/repository/netifi-maven-snapshots/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
+        maven {
+            url 'https://sonatype.netifiinc.com/repository/spring-libs-snapshot/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
+        maven {
+            url 'https://sonatype.netifiinc.com/repository/jcenter-oss-snapshot/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
+        maven {
             url 'https://sonatype.netifiinc.com/repository/jcenter-oss-release/'
             credentials {
                 username = "${netifiReadOnlyUsername}"
