@@ -28,8 +28,8 @@ dependencies {
     compile project(':netifi-broker-auth')
     compile project(':netifi-broker-client')
     compile project(':netifi-broker-frames')
-    compile project(':netifi-broker-info-idl')
-    compile project(':netifi-broker-mgmt-idl')
+    compile "com.netifi:netifi-broker-info-proto:${version}"
+    compile "com.netifi:netifi-broker-mgmt-proto:${version}"
     compile project(':netifi-common')
     compile project(':netifi-discovery')
     compile project(':netifi-discovery-aws')
@@ -38,9 +38,9 @@ dependencies {
     compile project(':netifi-metrics-influx')
     compile project(':netifi-metrics-micrometer')
     compile project(':netifi-metrics-prometheus')
-    compile project(':netifi-tracing-idl')
+    compile "com.netifi:netifi-tracing-proto:${version}"
     compile project(':netifi-tracing-openzipkin')
-    compile project(':netifi-vizceral-idl')
+    compile "com.netifi:netifi-vizceral-proto:${version}"
     compile project(':netifi-spring-core')
     compile project(':netifi-spring-boot-autoconfigure')
     compile project(':netifi-spring-boot-starter')

@@ -87,28 +87,7 @@ subprojects {
             }
         }
         maven {
-            url 'https://sonatype.netifiinc.com/repository/netifi-artifactory-libs-release-local/'
-            credentials {
-                username = "${netifiReadOnlyUsername}"
-                password = "${netifiReadOnlyPassword}"
-            }
-        }
-        maven {
-            url 'https://sonatype.netifiinc.com/repository/netifi-artifactory-libs-snapshot-local/'
-            credentials {
-                username = "${netifiReadOnlyUsername}"
-                password = "${netifiReadOnlyPassword}"
-            }
-        }
-        maven {
-            url 'https://sonatype.netifiinc.com/repository/spring-libs-snapshot/'
-            credentials {
-                username = "${netifiReadOnlyUsername}"
-                password = "${netifiReadOnlyPassword}"
-            }
-        }
-        maven {
-            url 'https://sonatype.netifiinc.com/repository/jcenter-oss-snapshot/'
+            url 'https://sonatype.netifiinc.com/repository/netifi-maven-releases/'
             credentials {
                 username = "${netifiReadOnlyUsername}"
                 password = "${netifiReadOnlyPassword}"

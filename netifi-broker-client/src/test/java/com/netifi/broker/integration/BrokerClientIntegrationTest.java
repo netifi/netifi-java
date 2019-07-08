@@ -45,7 +45,7 @@ public class BrokerClientIntegrationTest {
 
   private static final long accessKey = 9007199254740991L;
   private static final String accessToken = "kTBDVtfRBO4tHOnZzSyY5ym2kfY=";
-  private static final String host = "edge.netifi.io";
+  private static final String host = "localhost";
   private static final int port = 8001;
   private static final int server_port = 8001;
   private static BrokerClient server;
