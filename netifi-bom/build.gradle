@@ -25,11 +25,12 @@ build.doLast {
 }
 
 dependencies {
+    compile "com.netifi:netifi-broker-info-proto:${netifiProtoVersion}"
+    compile "com.netifi:netifi-broker-mgmt-proto:${netifiProtoVersion}"
+    compile "com.netifi:netifi-tracing-proto:${netifiProtoVersion}"
     compile project(':netifi-broker-auth')
     compile project(':netifi-broker-client')
     compile project(':netifi-broker-frames')
-    compile "com.netifi:netifi-broker-info-proto:${version}"
-    compile "com.netifi:netifi-broker-mgmt-proto:${version}"
     compile project(':netifi-common')
     compile project(':netifi-discovery')
     compile project(':netifi-discovery-aws')
@@ -38,9 +39,7 @@ dependencies {
     compile project(':netifi-metrics-influx')
     compile project(':netifi-metrics-micrometer')
     compile project(':netifi-metrics-prometheus')
-    compile "com.netifi:netifi-tracing-proto:${version}"
     compile project(':netifi-tracing-openzipkin')
-    compile "com.netifi:netifi-vizceral-proto:${version}"
     compile project(':netifi-spring-core')
     compile project(':netifi-spring-boot-autoconfigure')
     compile project(':netifi-spring-boot-starter')
