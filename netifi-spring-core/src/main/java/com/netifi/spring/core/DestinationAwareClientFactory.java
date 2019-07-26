@@ -28,6 +28,7 @@ public interface DestinationAwareClientFactory<T> extends BrokerClientFactory<T>
   }
 
   default T destination(String destination, String group) {
-    return lookup(BrokerClient.Type.DESTINATION, group, Tags.of("com.netifi.destination", destination));
+    return lookup(
+        BrokerClient.Type.DESTINATION, group, Tags.of("com.netifi.destination", destination));
   }
 }
