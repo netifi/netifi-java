@@ -308,7 +308,7 @@ public class BrokerClientStaticFactory {
         break;
       case DESTINATION:
         brokerSocket =
-            brokerClient.groupServiceSocket(group, tags.and(Tags.of("destination", destination)));
+            brokerClient.groupServiceSocket(group, tags.and(Tags.of("com.netifi.destination", destination)));
         break;
     }
 
