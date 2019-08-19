@@ -18,8 +18,6 @@ package com.netifi.broker;
 import com.netifi.common.tags.Tag;
 import com.netifi.common.tags.Tags;
 import com.typesafe.config.*;
-import reactor.core.publisher.Flux;
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -27,8 +25,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Spliterator;
-import java.util.stream.Stream;
 
 /**
  * Gets current default configuration for {@link BrokerClient.Builder}. Can be overriden with System
