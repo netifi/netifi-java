@@ -18,12 +18,16 @@ package com.netifi.broker;
 import com.netifi.common.tags.Tag;
 import com.netifi.common.tags.Tags;
 import com.typesafe.config.*;
+import reactor.core.publisher.Flux;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Spliterator;
 import java.util.stream.Stream;
 
 /**
@@ -148,27 +152,16 @@ final class DefaultBuilderConfig {
   static Tags getTags() {
     Tags tags = Tags.empty();
     try {
-      Stream<Tag> stream =
-          conf.getObject("netifi.client.tags")
-              .entrySet()
-              .stream()
-              .map(
-                  e -> {
-                    String key = e.getKey();
-                    ConfigValue configValue = e.getValue();
-                    if (configValue.valueType() == ConfigValueType.STRING) {
-                      String value = (String) configValue.unwrapped();
-                      if (value.isEmpty()) {
-                        throw new IllegalArgumentException("Tag mapping " + key + " is empty");
-                      }
-                      return Tag.of(key, value);
-                    }
-                    throw new IllegalArgumentException(
-                        "Tag mapping " + key + " is not a string: " + configValue);
-                  });
-      tags = Tags.of(stream::iterator);
-    } catch (ConfigException.Missing m) {
+      Arrays.stream(conf.getString("netifi.client.tags").split(","))
+          .forEach(
+              s -> {
+                String[] t = s.split(":");
+                Tag tag = Tag.of(t[0], t[1]);
+                tags.and(tag);
+              });
 
+    } catch (Throwable t) {
+      System.err.println("error parsing tags from config: " + t.getMessage());
     }
 
     return tags;
