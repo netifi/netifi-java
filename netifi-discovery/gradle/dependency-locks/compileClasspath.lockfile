@@ -3,5 +3,7 @@
 # This file is expected to be part of source control.
 io.projectreactor:reactor-core:3.2.9.RELEASE
 javax.inject:javax.inject:1
+org.apache.logging.log4j:log4j-api:2.11.2
+org.apache.logging.log4j:log4j-core:2.11.2
 org.reactivestreams:reactive-streams:1.0.2
 org.slf4j:slf4j-api:1.7.25

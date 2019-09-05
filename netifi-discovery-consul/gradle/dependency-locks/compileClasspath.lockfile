@@ -20,6 +20,8 @@ com.squareup.retrofit2:retrofit:2.3.0
 io.projectreactor:reactor-core:3.2.9.RELEASE
 javax.inject:javax.inject:1
 org.apache.commons:commons-lang3:3.4
+org.apache.logging.log4j:log4j-api:2.11.2
+org.apache.logging.log4j:log4j-core:2.11.2
 org.checkerframework:checker-qual:2.5.2
 org.codehaus.mojo:animal-sniffer-annotations:1.17
 org.reactivestreams:reactive-streams:1.0.2
