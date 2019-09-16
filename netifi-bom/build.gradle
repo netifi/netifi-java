@@ -34,6 +34,7 @@ dependencies {
     compile project(':netifi-common')
     compile project(':netifi-discovery')
     compile project(':netifi-discovery-aws')
+    compile project(':netifi-discovery-broker')
     compile project(':netifi-discovery-consul')
     compile project(':netifi-discovery-kubernetes')
     compile project(':netifi-metrics-influx')
