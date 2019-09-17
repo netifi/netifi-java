@@ -16,8 +16,10 @@
 package com.netifi.broker.auth;
 
 import com.netifi.common.time.Clock;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
-import java.nio.ByteBuffer;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -25,24 +27,6 @@ import org.junit.Test;
 public class DefaultSessionUtilTest {
   TestClock clock = new TestClock();
   DefaultSessionUtil sessionUtil = new DefaultSessionUtil(clock);
-
-  @Test
-  public void testDeepEquals() {
-    byte[] a1 = "hello world!".getBytes();
-    byte[] a2 = "hello world!".getBytes();
-    byte[] a3 = "goodbye world!".getBytes();
-    byte[] a4 = "hello world?".getBytes();
-    boolean equals = deepEquals(a1, a2);
-    Assert.assertTrue(equals);
-    equals = deepEquals(a1, a1);
-    Assert.assertTrue(equals);
-    equals = deepEquals(a1, a3);
-    Assert.assertFalse(equals);
-    equals = deepEquals(a1, a4);
-    Assert.assertFalse(equals);
-    equals = deepEquals(a1, null);
-    Assert.assertFalse(equals);
-  }
 
   @Test
   public void testGetSteps() {
@@ -64,37 +48,37 @@ public class DefaultSessionUtilTest {
   }
 
   @Test
-  public void testGetStepsAsByteArray() {
-    clock.setTime(60000);
-    byte[] stepsAsByteArray = sessionUtil.getStepsAsByteArray(2);
-    byte[] bytes = new byte[8];
-    ByteBuffer.wrap(bytes).putLong(2);
-    Assert.assertArrayEquals(bytes, stepsAsByteArray);
-  }
-
-  @Test
   public void testGenerateToken() {
     clock.setTime(0);
-    byte[] key = "super secret password".getBytes();
-    byte[] message = "hello world!".getBytes();
-    long epoch = sessionUtil.getThirtySecondsStepsFromEpoch();
-    byte[] m1 = sessionUtil.generateSessionToken(key, Unpooled.wrappedBuffer(message), epoch);
 
-    byte[] m3 = sessionUtil.generateSessionToken(key, Unpooled.wrappedBuffer(message), epoch + 1);
+    ByteBuf key = ByteBufUtil.writeUtf8(ByteBufAllocator.DEFAULT, "super secret password");
+    ByteBuf message = ByteBufUtil.writeUtf8(ByteBufAllocator.DEFAULT, "hello world!");
+
+    long epoch = sessionUtil.getThirtySecondsStepsFromEpoch();
+    ByteBuf m1 = sessionUtil.generateSessionToken(key, Unpooled.wrappedBuffer(message), epoch);
+
+    ByteBuf m3 = sessionUtil.generateSessionToken(key, Unpooled.wrappedBuffer(message), epoch + 1);
 
     Assert.assertNotNull(m1);
     Assert.assertNotNull(m3);
 
-    Assert.assertFalse(deepEquals(m1, m3));
+    Assert.assertFalse(ByteBufUtil.equals(m1, m3));
+
+    m1.release();
+    m3.release();
+
+    for (int i = 0; i < 100_000; i++) {
+      sessionUtil.generateSessionToken(key, Unpooled.wrappedBuffer(message), epoch).release();
+    }
   }
 
   @Test
   public void testGenerateRequestToken() {
     clock.setTime(0);
-    byte[] key = "super secret password".getBytes();
+    ByteBuf key = ByteBufUtil.writeUtf8(ByteBufAllocator.DEFAULT, "super secret password");
     String destination = "test";
     long epoch = sessionUtil.getThirtySecondsStepsFromEpoch();
-    byte[] sessionToken =
+    ByteBuf sessionToken =
         sessionUtil.generateSessionToken(
             key, Unpooled.wrappedBuffer(destination.getBytes()), epoch);
 
@@ -124,10 +108,10 @@ public class DefaultSessionUtilTest {
   @Test
   public void testValidateMessage() {
     clock.setTime(0);
-    byte[] key = "super secret password".getBytes();
+    ByteBuf key = ByteBufUtil.writeUtf8(ByteBufAllocator.DEFAULT, "super secret password");
     String destination = "test";
     long epoch = sessionUtil.getThirtySecondsStepsFromEpoch();
-    byte[] sessionToken =
+    ByteBuf sessionToken =
         sessionUtil.generateSessionToken(
             key, Unpooled.wrappedBuffer(destination.getBytes()), epoch);
     byte[] message = "a request".getBytes();
@@ -145,22 +129,6 @@ public class DefaultSessionUtilTest {
         sessionUtil.validateMessage(
             sessionToken, Unpooled.wrappedBuffer(message), requestToken, epoch + 2);
     Assert.assertFalse(valid);
-  }
-
-  boolean deepEquals(byte[] a1, byte[] a2) {
-    if (a1 == a2) return true;
-    if (a1 == null || a2 == null) return false;
-    int length = a1.length;
-    if (a2.length != length) return false;
-
-    for (int i = 0; i < length; i++) {
-      byte e1 = a1[i];
-      byte e2 = a2[i];
-      if (e1 != e2) {
-        return false;
-      }
-    }
-    return true;
   }
 
   class TestClock implements Clock {

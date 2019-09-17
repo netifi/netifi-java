@@ -339,6 +339,13 @@ public class BrokerClient implements Closeable {
       return (SELF) this;
     }
 
+    public SELF jwt(String jwtToken) {
+      this.accessToken = jwtToken;
+      this.accessKey = DestinationSetupFlyweight.JWT_AUTHENTICATION;
+      additionalFlags |= DestinationSetupFlyweight.FLAG_ALTERNATIVE_AUTHENTICATION;
+      return (SELF) this;
+    }
+
     public SELF poolSize(int poolSize) {
       this.poolSize = poolSize;
       return (SELF) this;

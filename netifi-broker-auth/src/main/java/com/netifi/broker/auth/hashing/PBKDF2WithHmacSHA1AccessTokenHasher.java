@@ -15,6 +15,10 @@
  */
 package com.netifi.broker.auth.hashing;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.spec.KeySpec;
 import java.util.Base64;
 import javax.crypto.SecretKey;
@@ -30,16 +34,25 @@ class PBKDF2WithHmacSHA1AccessTokenHasher implements AccessTokenHasher {
       new PBKDF2WithHmacSHA1AccessTokenHasher();
 
   @Override
-  public byte[] hash(byte[] salt, byte[] accessToken) {
+  public ByteBuf hash(ByteBuf salt, ByteBuf accessToken) {
     try {
       SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
       Base64.Encoder encoder = Base64.getEncoder();
-      char[] chars = encoder.encodeToString(accessToken).toCharArray();
-      KeySpec keySpec = new PBEKeySpec(chars, salt, 4096, 256);
+      ByteBuffer encoded = encoder.encode(accessToken.nioBuffer());
+      char[] chars = StandardCharsets.UTF_8.decode(encoded).array();
+      KeySpec keySpec = new PBEKeySpec(chars, toByteArray(salt), 4096, 256);
       SecretKey secretKey = factory.generateSecret(keySpec);
-      return secretKey.getEncoded();
+      return Unpooled.wrappedBuffer(secretKey.getEncoded());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private byte[] toByteArray(ByteBuf buf) {
+    byte[] b = new byte[buf.readableBytes()];
+    buf.markReaderIndex();
+    buf.readBytes(b);
+    buf.resetReaderIndex();
+    return b;
   }
 }
