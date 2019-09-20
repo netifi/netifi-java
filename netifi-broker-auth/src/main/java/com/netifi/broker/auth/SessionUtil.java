@@ -23,12 +23,12 @@ public abstract class SessionUtil {
     return new DefaultSessionUtil();
   }
 
-  public abstract byte[] generateSessionToken(byte[] key, ByteBuf data, long count);
+  public abstract ByteBuf generateSessionToken(ByteBuf key, ByteBuf data, long count);
 
-  public abstract int generateRequestToken(byte[] sessionToken, ByteBuf message, long count);
+  public abstract int generateRequestToken(ByteBuf sessionToken, ByteBuf message, long count);
 
   public abstract boolean validateMessage(
-      byte[] sessionToken, ByteBuf message, int requestToken, long count);
+      ByteBuf sessionToken, ByteBuf message, int requestToken, long count);
 
   public abstract long getThirtySecondsStepsFromEpoch();
 }

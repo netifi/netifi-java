@@ -25,10 +25,11 @@ build.doLast {
 }
 
 dependencies {
-    compile "com.netifi:netifi-broker-info-proto:${netifiProtoVersion}"
-    compile "com.netifi:netifi-broker-mgmt-proto:${netifiProtoVersion}"
-    compile "com.netifi:netifi-tracing-proto:${netifiProtoVersion}"
+    compile "com.netifi:netifi-broker-info-proto:${netifiProtoExternalVersion}"
+    compile "com.netifi:netifi-broker-mgmt-proto:${netifiProtoExternalVersion}"
+    compile "com.netifi:netifi-tracing-proto:${netifiProtoExternalVersion}"
     compile project(':netifi-broker-auth')
+    compile project(':netifi-broker-auth-jwt')
     compile project(':netifi-broker-client')
     compile project(':netifi-broker-frames')
     compile project(':netifi-common')

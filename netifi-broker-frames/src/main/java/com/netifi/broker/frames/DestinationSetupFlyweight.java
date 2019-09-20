@@ -30,6 +30,9 @@ public class DestinationSetupFlyweight {
   private static final int CONNECTION_ID_LENGTH = Long.BYTES + Long.BYTES;
   private static final int ADDITIONAL_FLAGS_SIZE = Short.BYTES;
   public static final short FLAG_ENABLE_PUBLIC_ACCESS = 0b00000000_00000001;
+  public static final short FLAG_ALTERNATIVE_AUTHENTICATION = 0b00000000_00000010;
+
+  public static final long JWT_AUTHENTICATION = 0x01;
 
   public static ByteBuf encode(
       ByteBufAllocator allocator,

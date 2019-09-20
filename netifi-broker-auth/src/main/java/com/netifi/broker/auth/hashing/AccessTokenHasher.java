@@ -15,7 +15,8 @@
  */
 package com.netifi.broker.auth.hashing;
 
-import java.util.Arrays;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 
 /** Implementations of this interface are used to hash access tokens. */
 public interface AccessTokenHasher {
@@ -39,10 +40,10 @@ public interface AccessTokenHasher {
    * @param accessToken access token to hash
    * @return hashed access token
    */
-  byte[] hash(byte[] salt, byte[] accessToken);
+  ByteBuf hash(ByteBuf salt, ByteBuf accessToken);
 
-  default boolean verify(byte[] salt, byte[] accessToken, byte[] hash) {
-    byte[] computed = hash(salt, accessToken);
-    return Arrays.equals(hash, computed);
+  default boolean verify(ByteBuf salt, ByteBuf accessToken, ByteBuf hash) {
+    ByteBuf computed = hash(salt, accessToken);
+    return ByteBufUtil.equals(hash, computed);
   }
 }
