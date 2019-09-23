@@ -35,7 +35,12 @@ public class GroupFlyweight {
     ByteBufUtil.reserveAndWriteUtf8(byteBuf, group, groupLength);
 
     int metadataLength = metadata.readableBytes();
-    byteBuf.writeInt(metadataLength).writeBytes(metadata, metadata.readerIndex(), metadataLength);
+    byteBuf.writeInt(metadataLength);
+
+    byteBuf =
+        allocator
+            .compositeBuffer()
+            .addComponents(true, byteBuf, metadata.slice(metadata.readerIndex(), metadataLength));
 
     for (Tag tag : tags) {
       String key = tag.getKey();

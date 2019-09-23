@@ -40,11 +40,14 @@ public class ShardFlyweight {
 
     int metadataLength = metadata.readableBytes();
     int shardKeyLength = shardKey.readableBytes();
-    byteBuf
-        .writeInt(metadataLength)
-        .writeBytes(metadata, metadata.readerIndex(), metadataLength)
-        .writeInt(shardKeyLength)
-        .writeBytes(shardKey, shardKey.readerIndex(), shardKeyLength);
+    byteBuf.writeInt(metadataLength);
+
+    byteBuf =
+        allocator
+            .compositeBuffer()
+            .addComponents(true, byteBuf, metadata.slice(metadata.readerIndex(), metadataLength))
+            .writeInt(shardKeyLength)
+            .writeBytes(shardKey, shardKey.readerIndex(), shardKeyLength);
 
     for (Tag tag : tags) {
       String key = tag.getKey();

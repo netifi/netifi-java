@@ -34,8 +34,13 @@ public class BroadcastFlyweight {
     byteBuf.writeInt(groupLength);
     ByteBufUtil.reserveAndWriteUtf8(byteBuf, group, groupLength);
 
-    int metadataSize = metadata.readableBytes();
-    byteBuf.writeInt(metadataSize).writeBytes(metadata, metadata.readerIndex(), metadataSize);
+    int metadataLength = metadata.readableBytes();
+    byteBuf.writeInt(metadataLength);
+
+    byteBuf =
+        allocator
+            .compositeBuffer()
+            .addComponents(true, byteBuf, metadata.slice(metadata.readerIndex(), metadataLength));
 
     for (Tag tag : tags) {
       String key = tag.getKey();

@@ -17,17 +17,17 @@ package com.netifi.broker.frames;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.rsocket.buffer.TupleByteBuf;
 
 public class AuthorizationWrapperFlyweight {
 
   public static ByteBuf encode(ByteBufAllocator allocator, long accessKey, ByteBuf innerFrame) {
 
     ByteBuf byteBuf =
-        FrameHeaderFlyweight.encodeFrameHeader(allocator, FrameType.AUTHORIZATION_WRAPPER);
+        FrameHeaderFlyweight.encodeFrameHeader(allocator, FrameType.AUTHORIZATION_WRAPPER)
+            .writeLong(accessKey);
 
-    byteBuf.writeLong(accessKey).writeBytes(innerFrame);
-
-    return byteBuf;
+    return TupleByteBuf.of(byteBuf, innerFrame);
   }
 
   public static long accessKey(ByteBuf byteBuf) {
