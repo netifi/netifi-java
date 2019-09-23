@@ -40,10 +40,6 @@ public class AuthorizationWrapperFlyweight {
     int offset = FrameHeaderFlyweight.BYTES;
     offset += Long.BYTES;
 
-    byteBuf.markReaderIndex();
-    byteBuf.skipBytes(offset);
-    ByteBuf slice = byteBuf.slice();
-    byteBuf.resetReaderIndex();
-    return slice;
+    return byteBuf.slice(offset, byteBuf.readableBytes() - offset);
   }
 }
