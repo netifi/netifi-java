@@ -40,7 +40,8 @@ public class GroupFlyweight {
     byteBuf =
         allocator
             .compositeBuffer()
-            .addComponents(true, byteBuf, metadata.slice(metadata.readerIndex(), metadataLength));
+            .addComponents(
+                true, byteBuf, metadata.slice(metadata.readerIndex(), metadataLength).retain());
 
     for (Tag tag : tags) {
       String key = tag.getKey();

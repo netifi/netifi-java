@@ -27,7 +27,7 @@ public class AuthorizationWrapperFlyweight {
         FrameHeaderFlyweight.encodeFrameHeader(allocator, FrameType.AUTHORIZATION_WRAPPER)
             .writeLong(accessKey);
 
-    return TupleByteBuf.of(byteBuf, innerFrame);
+    return TupleByteBuf.of(byteBuf, innerFrame.retain());
   }
 
   public static long accessKey(ByteBuf byteBuf) {

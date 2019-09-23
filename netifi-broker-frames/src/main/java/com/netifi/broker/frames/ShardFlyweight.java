@@ -45,7 +45,8 @@ public class ShardFlyweight {
     byteBuf =
         allocator
             .compositeBuffer()
-            .addComponents(true, byteBuf, metadata.slice(metadata.readerIndex(), metadataLength))
+            .addComponents(
+                true, byteBuf, metadata.slice(metadata.readerIndex(), metadataLength).retain())
             .writeInt(shardKeyLength)
             .writeBytes(shardKey, shardKey.readerIndex(), shardKeyLength);
 
