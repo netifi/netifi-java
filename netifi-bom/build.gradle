@@ -37,6 +37,7 @@ dependencies {
     compile project(':netifi-discovery-aws')
     compile project(':netifi-discovery-consul')
     compile project(':netifi-discovery-kubernetes')
+    compile project(':netifi-logging-service')
     compile project(':netifi-metrics-influx')
     compile project(':netifi-metrics-micrometer')
     compile project(':netifi-metrics-prometheus')
