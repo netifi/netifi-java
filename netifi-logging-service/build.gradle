@@ -40,7 +40,7 @@ clean {
     delete protobuf.generatedFilesBaseDir
 }
 
-task execute(type:JavaExec) {
-    main = mainClass
+task wooo(type:JavaExec) {
+    main = "com.netifi.logging.RicFlair"
     classpath = sourceSets.test.runtimeClasspath
 }
