@@ -110,10 +110,12 @@ public class LoggingServiceImpl implements LoggingService {
     } else {
       logEventBuilder.setMessage(message.getFormattedMessage());
     }
-  
+
     String loggerName = logEvent.getLoggerName();
-  
-    logEventBuilder.setLoggerName(loggerName == null ? "NO_LOGGER_NAME" : loggerName).setLevel(logEvent.getLevel().name());
+
+    logEventBuilder
+        .setLoggerName(loggerName == null ? "NO_LOGGER_NAME" : loggerName)
+        .setLevel(logEvent.getLevel().name());
 
     return builder.addEvents(logEventBuilder);
   }
