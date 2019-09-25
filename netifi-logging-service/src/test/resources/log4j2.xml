@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration packages="com.netifi" status="warn">
+    <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %p %c{1.} [%t] %m%n"/>
+        </Console>
+        <StreamingLogAppender name="NetifiGatewayAppender" />
+    </Appenders>
+    <Loggers>
+        <Root level="${env:LOG4J_ROOT_LEVEL:-info}" additivity="false">
+            <AppenderRef ref="STDOUT"/>
+            <AppenderRef ref="NetifiGatewayAppender"/>
+        </Root>
+        <logger name="com.netifi" level="${env:LOG4J_NETIFI_LEVEL:-debug}" additivity="false">
+            <AppenderRef ref="STDOUT"/>
+        </logger>
+        <logger name="io.rsocket.Frame.Error" level="${env:LOG4J_RSOCKET_ERROR_LEVEL:-debug}" additivity="false">
+            <AppenderRef ref="STDOUT"/>
+        </logger>
+        <logger name="io.rsocket.FrameLogger" level="${env:LOG4J_RSOCKET_FRAMELOGGER_LEVEL:-info}" additivity="false">
+            <AppenderRef ref="STDOUT"/>
+        </logger>
+    </Loggers>
+</Configuration>
