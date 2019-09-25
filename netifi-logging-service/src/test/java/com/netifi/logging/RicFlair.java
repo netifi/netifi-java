@@ -16,15 +16,14 @@
 package com.netifi.logging;
 
 import com.netifi.broker.BrokerClient;
+import java.time.Duration;
+import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
-
-import java.time.Duration;
-import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class RicFlair {
 
