@@ -30,6 +30,12 @@ import reactor.core.publisher.BufferOverflowStrategy;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Scheduler;
 
+/**
+ * Streams Log4J 2 events to from a {@link StreamingLogAppender}. To use add packages to your
+ * log4j2.xml like <Configuration packages="com.netifi" status="warn"> and then add an appender like
+ * <StreamingLogAppender name="NetifiGatewayAppender" />. The service will find the appender by the
+ * name given and stream the live log events.
+ */
 public class LoggingServiceImpl implements LoggingService {
   private final Scheduler scheduler;
   private final int maxWindowSize;
