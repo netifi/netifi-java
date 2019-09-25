@@ -33,7 +33,7 @@ public class RicFlair {
 
   private static final Logger logger = LogManager.getLogger(RicFlair.class);
 
-  private static final Duration duration = Duration.ofMillis(1_000);
+  private static final Duration duration = Duration.ofMillis(10);
 
   private static final String[] messages =
       new String[] {
