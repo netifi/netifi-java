@@ -84,7 +84,7 @@ public class RicFlair {
 
     client.addService(
         new LoggingServiceServer(
-            new LoggingServiceImpl(Schedulers.newSingle("logger-schduler")),
+            new LoggingServiceImpl(Schedulers.newSingle("logger-scheduler")),
             Optional.empty(),
             Optional.empty()));
 
