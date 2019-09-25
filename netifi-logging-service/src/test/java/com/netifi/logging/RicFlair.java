@@ -80,6 +80,7 @@ public class RicFlair {
             .accessKey(accessKey)
             .accessToken(accessToken)
             .group("TestLogger")
+            .disableSsl()
             .build();
 
     client.addService(
