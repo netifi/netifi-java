@@ -13,6 +13,7 @@
         </Root>
         <logger name="com.netifi" level="${env:LOG4J_NETIFI_LEVEL:-debug}" additivity="false">
             <AppenderRef ref="STDOUT"/>
+            <AppenderRef ref="NetifiGatewayAppender"/>
         </logger>
         <logger name="io.rsocket.Frame.Error" level="${env:LOG4J_RSOCKET_ERROR_LEVEL:-debug}" additivity="false">
             <AppenderRef ref="STDOUT"/>
