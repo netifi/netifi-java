@@ -1,0 +1,102 @@
+package com.netifi.logging;
+
+import com.google.protobuf.StringValue;
+import com.netifi.common.logging.StreamingLogAppender;
+import io.netty.buffer.ByteBuf;
+import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.message.Message;
+import org.apache.logging.log4j.util.StringBuilderFormattable;
+import reactor.core.publisher.BufferOverflowStrategy;
+import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Scheduler;
+
+public class LoggingServiceImpl implements LoggingService {
+  private final Scheduler scheduler;
+  private final int maxWindowSize;
+  private final int overflowBufferSize;
+  private final ConcurrentHashMap<String, Flux<LogEvents>> logEventStreams;
+  private final Duration maxWindowTime;
+
+  public LoggingServiceImpl(Scheduler scheduler) {
+    this(scheduler, 250, Duration.ofMillis(250), 1024);
+  }
+
+  public LoggingServiceImpl(
+      Scheduler scheduler, int maxWindowSize, Duration maxWindowTime, int overflowBufferSize) {
+    this.scheduler = scheduler;
+    this.maxWindowSize = maxWindowSize;
+    this.maxWindowTime = maxWindowTime;
+    this.overflowBufferSize = overflowBufferSize;
+    this.logEventStreams = new ConcurrentHashMap<>();
+  }
+
+  @Override
+  public Flux<LogEvents> streamLogByAppenderName(StringValue message, ByteBuf metadata) {
+    String appenderName = message.getValue();
+
+    Map<String, Appender> appenders = getAppenders();
+    Appender appender = appenders.get(appenderName);
+
+    if (appender == null) {
+      return Flux.error(new IllegalStateException("no appender found for name " + appenderName));
+    }
+
+    if (!(appender instanceof StreamingLogAppender)) {
+      return Flux.error(
+          new IllegalStateException(
+              "the appender named "
+                  + appenderName
+                  + " is not an instance of "
+                  + StreamingLogAppender.class.getName()));
+    }
+
+    StreamingLogAppender streamingLogAppender = (StreamingLogAppender) appender;
+
+    return lookupLogEventStream(appenderName, streamingLogAppender)
+        .onBackpressureBuffer(overflowBufferSize, BufferOverflowStrategy.DROP_OLDEST);
+  }
+
+  private Flux<LogEvents> lookupLogEventStream(
+      String appenderName, StreamingLogAppender streamingLogAppender) {
+    return logEventStreams.computeIfAbsent(
+        appenderName,
+        __ ->
+            streamingLogAppender
+                .streamLogs()
+                .windowTimeout(maxWindowSize, maxWindowTime, scheduler)
+                .concatMap(flux -> flux.reduce(LogEvents.newBuilder(), this::reduce))
+                .map(LogEvents.Builder::build)
+                .publish()
+                .refCount()
+                .doFinally(s -> logEventStreams.remove(appenderName)));
+  }
+
+  private LogEvents.Builder reduce(
+      LogEvents.Builder builder, org.apache.logging.log4j.core.LogEvent logEvent) {
+    com.netifi.logging.LogEvent.Builder logEventBuilder = com.netifi.logging.LogEvent.newBuilder();
+    Message message = logEvent.getMessage();
+
+    if (message instanceof StringBuilderFormattable) {
+      StringBuilderFormattable formattable = (StringBuilderFormattable) message;
+      StringBuilder sb = new StringBuilder();
+      formattable.formatTo(sb);
+      logEventBuilder.setMessage(sb.toString());
+    } else {
+      logEventBuilder.setMessage(message.getFormattedMessage());
+    }
+
+    logEventBuilder.setLoggerName(logEvent.getLoggerName()).setLevel(logEvent.getLevel().name());
+
+    return builder.addEvents(logEventBuilder);
+  }
+
+  private Map<String, Appender> getAppenders() {
+    Logger logger = LogManager.getLogger();
+    return ((org.apache.logging.log4j.core.Logger) logger).getAppenders();
+  }
+}

@@ -33,7 +33,7 @@ import reactor.core.publisher.Flux;
     elementType = Appender.ELEMENT_TYPE)
 public class StreamingLogAppender extends AbstractAppender {
 
-  private static final DirectProcessor<String> logEvents = DirectProcessor.create();
+  private static final DirectProcessor<LogEvent> logEvents = DirectProcessor.create();
 
   protected StreamingLogAppender(String name, Filter filter) {
     super(name, filter, null);
@@ -47,10 +47,10 @@ public class StreamingLogAppender extends AbstractAppender {
 
   @Override
   public void append(LogEvent event) {
-    logEvents.onNext(event.getMessage().getFormattedMessage());
+    logEvents.onNext(event);
   }
 
-  public Flux<String> streamLogs() {
-    return logEvents.onBackpressureDrop();
+  public Flux<LogEvent> streamLogs() {
+    return logEvents;
   }
 }

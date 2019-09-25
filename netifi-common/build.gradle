@@ -6,6 +6,7 @@ plugins {
 description = 'Netifi Common'
 
 dependencies {
+    compile 'io.rsocket:rsocket-core'
     compileOnly 'javax.inject:javax.inject'
     compile 'io.projectreactor:reactor-core'
     compile 'org.apache.logging.log4j:log4j-core'

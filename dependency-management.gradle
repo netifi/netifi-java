@@ -24,6 +24,7 @@ dependencyManagement {
         dependency "com.netflix.spectator:spectator-ext-ipc:${spectatorVersion}"
         dependency "com.netflix.spectator:spectator-reg-atlas:${spectatorVersion}"
         dependency "com.netifi:netifi-broker-info-proto:${netifiProtoExternalVersion}"
+        dependency "com.netifi:netifi-logging-proto:${netifiProtoExternalVersion}"
         dependency "com.netifi:netifi-broker-mgmt-proto:${netifiProtoExternalVersion}"
         dependency "com.netifi:netifi-tracing-proto:${netifiProtoExternalVersion}"
         dependency "com.netifi:netifi-vizceral-proto:${netifiProtoExternalVersion}"
