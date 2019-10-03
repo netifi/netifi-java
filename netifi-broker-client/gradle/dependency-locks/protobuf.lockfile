@@ -2,3 +2,4 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 com.netifi:netifi-broker-info-proto:1.6.10-SNAPSHOT
+com.netifi:netifi-httpgateway-proto:1.6.10-SNAPSHOT
