@@ -2,7 +2,7 @@ apply plugin: 'io.spring.dependency-management'
 
 dependencyManagement {
     imports {
-
+        mavenBom "io.rsocket:rsocket-bom:${rsocketVersion}"
         mavenBom "com.fasterxml.jackson:jackson-bom:${jacksonVersion}"
         mavenBom "io.netty:netty-bom:${nettyVersion}"
         mavenBom "io.projectreactor:reactor-bom:${reactorBomVersion}"

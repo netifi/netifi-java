@@ -17,10 +17,10 @@ com.squareup.okhttp3:okhttp:3.9.0
 com.squareup.okio:okio:1.13.0
 com.squareup.retrofit2:converter-jackson:2.3.0
 com.squareup.retrofit2:retrofit:2.3.0
-io.projectreactor:reactor-core:3.2.9.RELEASE
+io.projectreactor:reactor-core:3.3.0.RELEASE
 javax.inject:javax.inject:1
 org.apache.commons:commons-lang3:3.4
 org.checkerframework:checker-qual:2.5.2
 org.codehaus.mojo:animal-sniffer-annotations:1.17
-org.reactivestreams:reactive-streams:1.0.2
+org.reactivestreams:reactive-streams:1.0.3
 org.slf4j:slf4j-api:1.7.25
