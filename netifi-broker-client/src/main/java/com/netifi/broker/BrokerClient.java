@@ -605,7 +605,9 @@ public class BrokerClient implements Closeable {
           clientTransportFactory =
               address -> {
                 TcpClient client =
-                    TcpClient.create().addressSupplier(() -> address).secure(sslContext);
+                    TcpClient.create()
+                        .addressSupplier(() -> address)
+                        .secure(spec -> spec.sslContext(sslContext));
                 return WebsocketClientTransport.create(client);
               };
         } catch (Exception sslException) {
@@ -696,7 +698,9 @@ public class BrokerClient implements Closeable {
           clientTransportFactory =
               address -> {
                 TcpClient client =
-                    TcpClient.create().addressSupplier(() -> address).secure(sslContext);
+                    TcpClient.create()
+                        .addressSupplier(() -> address)
+                        .secure(spec -> spec.sslContext(sslContext));
                 return TcpClientTransport.create(client);
               };
         } catch (Exception sslException) {
@@ -1065,7 +1069,9 @@ public class BrokerClient implements Closeable {
             clientTransportFactory =
                 address -> {
                   TcpClient client =
-                      TcpClient.create().addressSupplier(() -> address).secure(sslContext);
+                      TcpClient.create()
+                          .addressSupplier(() -> address)
+                          .secure(spec -> spec.sslContext(sslContext));
                   return TcpClientTransport.create(client);
                 };
           } catch (Exception sslException) {

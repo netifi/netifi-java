@@ -65,6 +65,7 @@ subprojects {
     targetCompatibility = 1.8
 
     repositories {
+        maven { url 'https://repo.spring.io/milestone' }
         maven {
             url 'https://sonatype.netifiinc.com/repository/jcenter/'
             credentials {
