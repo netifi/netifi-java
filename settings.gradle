@@ -1,7 +1,7 @@
 pluginManagement {
     repositories {
         maven {
-            url 'https://sonatype.netifiinc.com/repository/netifi-plugin-group/'
+            url 'https://nexus.netifi.com/repository/maven-plugin-group/'
             credentials {
                 username = "${netifiReadOnlyUsername}"
                 password = "${netifiReadOnlyPassword}"
