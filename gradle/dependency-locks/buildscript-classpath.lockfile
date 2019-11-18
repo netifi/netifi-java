@@ -26,8 +26,8 @@ gradle.plugin.com.hierynomus.gradle.plugins:license-gradle-plugin:0.15.0
 gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.12.0-rc2
 gradle.plugin.io.morethan.jmhreport:gradle-jmh-report:0.6.2.1
 io.morethan.jmhreport:io.morethan.jmhreport.gradle.plugin:0.6.2.1
-io.spring.dependency-management:io.spring.dependency-management.gradle.plugin:1.0.7.RELEASE
-io.spring.gradle:dependency-management-plugin:1.0.7.RELEASE
+io.spring.dependency-management:io.spring.dependency-management.gradle.plugin:1.0.8.RELEASE
+io.spring.gradle:dependency-management-plugin:1.0.8.RELEASE
 javax.annotation:jsr250-api:1.0
 javax.enterprise:cdi-api:1.0
 javax.inject:javax.inject:1
