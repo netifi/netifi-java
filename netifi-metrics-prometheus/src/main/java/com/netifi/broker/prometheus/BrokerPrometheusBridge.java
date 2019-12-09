@@ -240,27 +240,28 @@ public class BrokerPrometheusBridge implements MetricsSnapshotHandler {
   }
 
   String generatePrometheusFriendlyName(Meter.Id id) {
-    String name = "";
+    String prefix = "";
     Optional<Tag> group = findTagByKey(id, "group");
 
     if (group.isPresent()) {
-      name += group.get().getValue();
+      prefix += group.get().getValue();
     }
 
     Optional<Tag> service = findTagByKey(id, "service");
     if (service.isPresent()) {
-      name += "." + service.get().getValue();
+      prefix += "." + service.get().getValue();
     }
 
     Optional<Tag> method = findTagByKey(id, "method");
     if (method.isPresent()) {
-      name += "." + method.get().getValue();
+      prefix += "." + method.get().getValue();
     }
 
-    if (name.isEmpty()) {
+    String name = id.getName();
+    if (prefix.isEmpty()) {
       return name;
     } else {
-      return name + "." + id.getName();
+      return prefix + "." + name;
     }
   }
 

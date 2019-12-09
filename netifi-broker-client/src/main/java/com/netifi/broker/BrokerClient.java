@@ -43,6 +43,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -506,12 +507,25 @@ public class BrokerClient implements Closeable {
       Objects.requireNonNull(accessKey, "account key is required");
       Objects.requireNonNull(accessToken, "account token is required");
       Objects.requireNonNull(group, "group is required");
+
+      if ((additionalFlags & DestinationSetupFlyweight.FLAG_ALTERNATIVE_AUTHENTICATION)
+          == DestinationSetupFlyweight.FLAG_ALTERNATIVE_AUTHENTICATION) {
+        if (accessKey == DestinationSetupFlyweight.JWT_AUTHENTICATION) {
+          logger.debug("using JWT authentication");
+          this.accessTokenBytes = accessToken.getBytes(StandardCharsets.UTF_8);
+        } else {
+          throw new IllegalStateException("unknown alternative authentication type: " + accessKey);
+        }
+      } else {
+        logger.debug("using access key and token authentication");
+        this.accessTokenBytes = Base64.getDecoder().decode(accessToken);
+      }
+
       if (destination == null) {
         destination = DEFAULT_DESTINATION;
       }
       tags = tags.and("com.netifi.destination", destination);
 
-      this.accessTokenBytes = Base64.getDecoder().decode(accessToken);
       this.connectionIdSeed =
           this.connectionIdSeed == null ? UUID.randomUUID().toString() : this.connectionIdSeed;
 
