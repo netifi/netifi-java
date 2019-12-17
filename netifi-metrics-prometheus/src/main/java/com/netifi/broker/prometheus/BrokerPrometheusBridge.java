@@ -105,6 +105,7 @@ public class BrokerPrometheusBridge implements MetricsSnapshotHandler {
                 Optional.ofNullable(bindPort),
                 Optional.ofNullable(metricsUrl)),
             Optional.empty(),
+            Optional.empty(),
             Optional.empty()));
 
     brokerClient.onClose().block();

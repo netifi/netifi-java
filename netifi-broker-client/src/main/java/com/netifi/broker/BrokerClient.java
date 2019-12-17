@@ -20,7 +20,6 @@ import com.netifi.broker.frames.DestinationSetupFlyweight;
 import com.netifi.broker.info.Broker;
 import com.netifi.broker.rsocket.BrokerSocket;
 import com.netifi.broker.rsocket.NamedRSocketClientWrapper;
-import com.netifi.broker.rsocket.NamedRSocketServiceWrapper;
 import com.netifi.broker.rsocket.transport.BrokerAddressSelectors;
 import com.netifi.common.tags.Tag;
 import com.netifi.common.tags.Tags;
@@ -195,7 +194,8 @@ public class BrokerClient implements Closeable {
   public BrokerClient addNamedRSocket(String name, RSocket rSocket) {
     Objects.requireNonNull(name);
     Objects.requireNonNull(rSocket);
-    return addService(NamedRSocketServiceWrapper.wrap(name, rSocket));
+    //    return addService(NamedRSocketServiceWrapper.wrap(name, rSocket));
+    return this;
   }
 
   @Deprecated
@@ -605,7 +605,9 @@ public class BrokerClient implements Closeable {
           clientTransportFactory =
               address -> {
                 TcpClient client =
-                    TcpClient.create().addressSupplier(() -> address).secure(sslContext);
+                    TcpClient.create()
+                        .addressSupplier(() -> address)
+                        .secure(sslContextSpec -> sslContextSpec.sslContext(sslContext));
                 return WebsocketClientTransport.create(client);
               };
         } catch (Exception sslException) {
@@ -696,7 +698,9 @@ public class BrokerClient implements Closeable {
           clientTransportFactory =
               address -> {
                 TcpClient client =
-                    TcpClient.create().addressSupplier(() -> address).secure(sslContext);
+                    TcpClient.create()
+                        .addressSupplier(() -> address)
+                        .secure(sslContextSpec -> sslContextSpec.sslContext(sslContext));
                 return TcpClientTransport.create(client);
               };
         } catch (Exception sslException) {
@@ -1065,7 +1069,9 @@ public class BrokerClient implements Closeable {
             clientTransportFactory =
                 address -> {
                   TcpClient client =
-                      TcpClient.create().addressSupplier(() -> address).secure(sslContext);
+                      TcpClient.create()
+                          .addressSupplier(() -> address)
+                          .secure(sslContextSpec -> sslContextSpec.sslContext(sslContext));
                   return TcpClientTransport.create(client);
                 };
           } catch (Exception sslException) {

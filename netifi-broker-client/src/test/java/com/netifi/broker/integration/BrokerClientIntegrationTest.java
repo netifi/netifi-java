@@ -77,7 +77,8 @@ public class BrokerClientIntegrationTest {
             .build();
 
     server.addService(
-        new SimpleServiceServer(new DefaultSimpleService(), Optional.empty(), Optional.empty()));
+        new SimpleServiceServer(
+            new DefaultSimpleService(), Optional.empty(), Optional.empty(), Optional.empty()));
 
     brokerSocket = brokerClient.groupServiceSocket("test.server", Tags.empty());
   }

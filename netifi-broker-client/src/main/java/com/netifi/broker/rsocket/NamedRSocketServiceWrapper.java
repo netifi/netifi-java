@@ -27,7 +27,7 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 public class NamedRSocketServiceWrapper extends AbstractUnwrappingRSocket
-    implements RSocketRpcService {
+    implements ResponderRSocket {
   private final String name;
 
   private NamedRSocketServiceWrapper(String name, RSocket source) {
@@ -60,23 +60,14 @@ public class NamedRSocketServiceWrapper extends AbstractUnwrappingRSocket
   }
 
   @Override
-  public String getService() {
-    return name;
-  }
-
-  @Override
-  public final Flux<Payload> requestChannel(Payload payload, Flux<Payload> publisher) {
+  public final Flux<Payload> requestChannel(Payload payload, Publisher<Payload> publisher) {
     if (source instanceof ResponderRSocket) {
       ResponderRSocket responderRSocket = (ResponderRSocket) source;
 
-      return responderRSocket.requestChannel(unwrap(payload), publisher.map(this::unwrap));
+      return responderRSocket.requestChannel(
+          unwrap(payload), Flux.from(publisher).map(this::unwrap));
     }
 
     return super.requestChannel(publisher);
-  }
-
-  @Override
-  public final Flux<Payload> requestChannel(Payload payload, Publisher<Payload> publisher) {
-    return requestChannel(payload, Flux.from(publisher));
   }
 }

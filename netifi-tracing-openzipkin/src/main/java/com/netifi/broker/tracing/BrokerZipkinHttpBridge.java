@@ -89,6 +89,7 @@ public class BrokerZipkinHttpBridge implements BrokerTracingService {
         new BrokerTracingServiceServer(
             new BrokerZipkinHttpBridge(zipkinHost, zipkinPort, zipkinSpansUrl),
             Optional.empty(),
+            Optional.empty(),
             Optional.empty()));
 
     brokerClient.onClose().block();

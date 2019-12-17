@@ -16,9 +16,6 @@
 package com.netifi.spring.core.config;
 
 import com.netifi.broker.BrokerClient;
-import com.netifi.broker.info.BlockingBrokerInfoService;
-import com.netifi.broker.info.BlockingBrokerInfoServiceClient;
-import com.netifi.broker.info.BlockingBrokerInfoServiceServer;
 import com.netifi.broker.info.BrokerInfoService;
 import com.netifi.broker.info.BrokerInfoServiceClient;
 import com.netifi.broker.info.BrokerInfoServiceServer;
@@ -26,9 +23,7 @@ import com.netifi.spring.core.BrokerClientApplicationEventListener;
 import com.netifi.spring.core.annotation.BrokerClientBeanDefinitionRegistryPostProcessor;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentracing.Tracer;
-import io.rsocket.rpc.metrics.om.BlockingMetricsSnapshotHandler;
-import io.rsocket.rpc.metrics.om.BlockingMetricsSnapshotHandlerClient;
-import io.rsocket.rpc.metrics.om.BlockingMetricsSnapshotHandlerServer;
+import io.rsocket.ipc.MetadataDecoder;
 import io.rsocket.rpc.metrics.om.MetricsSnapshotHandler;
 import io.rsocket.rpc.metrics.om.MetricsSnapshotHandlerClient;
 import io.rsocket.rpc.metrics.om.MetricsSnapshotHandlerServer;
@@ -40,7 +35,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import reactor.core.scheduler.Scheduler;
 
 @Configuration
 public class BrokerClientConfiguration implements ApplicationContextAware {
@@ -60,34 +54,20 @@ public class BrokerClientConfiguration implements ApplicationContextAware {
   @Bean
   public BrokerInfoServiceServer brokerInfoServiceServer(
       BrokerInfoService brokerInfoService,
+      Optional<MetadataDecoder> metadataDecoder,
       Optional<MeterRegistry> registry,
       Optional<Tracer> tracer) {
-    return new BrokerInfoServiceServer(brokerInfoService, registry, tracer);
-  }
-
-  @Bean
-  public BlockingBrokerInfoServiceServer blockingBrokerInfoServiceServer(
-      BlockingBrokerInfoService blockingBrokerInfoService,
-      Optional<Scheduler> scheduler,
-      Optional<MeterRegistry> registry) {
-    return new BlockingBrokerInfoServiceServer(blockingBrokerInfoService, scheduler, registry);
+    return new BrokerInfoServiceServer(brokerInfoService, metadataDecoder, registry, tracer);
   }
 
   @Bean
   public MetricsSnapshotHandlerServer metricsSnapshotHandlerServer(
       MetricsSnapshotHandler metricsSnapshotHandler,
+      Optional<MetadataDecoder> metadataDecoder,
       Optional<MeterRegistry> registry,
       Optional<Tracer> tracer) {
-    return new MetricsSnapshotHandlerServer(metricsSnapshotHandler, registry, tracer);
-  }
-
-  @Bean
-  public BlockingMetricsSnapshotHandlerServer blockingMetricsSnapshotHandlerServer(
-      BlockingMetricsSnapshotHandler blockingMetricsSnapshotHandler,
-      Optional<Scheduler> scheduler,
-      Optional<MeterRegistry> registry) {
-    return new BlockingMetricsSnapshotHandlerServer(
-        blockingMetricsSnapshotHandler, scheduler, registry);
+    return new MetricsSnapshotHandlerServer(
+        metricsSnapshotHandler, metadataDecoder, registry, tracer);
   }
 
   @Override
@@ -96,10 +76,6 @@ public class BrokerClientConfiguration implements ApplicationContextAware {
         (DefaultListableBeanFactory) applicationContext.getAutowireCapableBeanFactory();
     AnnotatedBeanDefinitionReader reader = new AnnotatedBeanDefinitionReader(factory);
 
-    reader.register(
-        BlockingMetricsSnapshotHandlerClient.class,
-        MetricsSnapshotHandlerClient.class,
-        BlockingBrokerInfoServiceClient.class,
-        BrokerInfoServiceClient.class);
+    reader.register(MetricsSnapshotHandlerClient.class, BrokerInfoServiceClient.class);
   }
 }

@@ -130,6 +130,7 @@ public class BrokerInfluxBridge implements MetricsSnapshotHandler {
                       return t;
                     })),
             Optional.empty(),
+            Optional.empty(),
             Optional.empty()));
 
     brokerClient.onClose().block();

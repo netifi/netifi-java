@@ -44,9 +44,9 @@ if (details.branchName != null) {
 }
 
 allprojects {
-    dependencyLocking {
-        lockAllConfigurations()
-    }
+//    dependencyLocking {
+//        lockAllConfigurations()
+//    }
     project.version += versionSuffix
     ext {
         uniqueVersion = "${tmpUniqueVersion}"
@@ -65,6 +65,8 @@ subprojects {
     targetCompatibility = 1.8
 
     repositories {
+
+        maven { url 'https://oss.jfrog.org/oss-snapshot-local' }
         maven {
             url 'https://nexus.netifi.com/repository/jcenter/'
             credentials {
