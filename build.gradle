@@ -1,7 +1,7 @@
 buildscript {
-    configurations.classpath {
-        resolutionStrategy.activateDependencyLocking()
-    }
+//    configurations.classpath {
+//        resolutionStrategy.activateDependencyLocking()
+//    }
 }
 
 plugins {
@@ -66,6 +66,7 @@ subprojects {
 
     repositories {
 
+        mavenCentral()
         maven { url 'https://oss.jfrog.org/oss-snapshot-local' }
         maven {
             url 'https://nexus.netifi.com/repository/jcenter/'

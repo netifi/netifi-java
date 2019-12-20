@@ -9,6 +9,8 @@ dependencyManagement {
         mavenBom "org.apache.logging.log4j:log4j-bom:${log4j2Version}"
         mavenBom "org.junit:junit-bom:${junitJupiterVersion}"
         mavenBom "software.amazon.awssdk:bom:${awssdkVersion}"
+        mavenBom "io.rsocket:rsocket-bom:${rsocketVersion}"
+        mavenBom "com.google.protobuf:protobuf-bom:${protobufVersion}"
     }
 
     dependencies {
@@ -16,8 +18,6 @@ dependencyManagement {
         
         dependency "com.github.davidmoten:rxjava2-jdbc:${rxjava2JdbcVersion}"
         dependency "com.google.guava:guava:${guavaVersion}"
-        dependency "com.google.protobuf:protobuf-java-util:${protobufVersion}"
-        dependency "com.google.protobuf:protobuf-java:${protobufVersion}"
         dependency "com.google.protobuf:protoc:${protobufVersion}"
         dependency "com.hubspot.jackson:jackson-datatype-protobuf:${jacksonProtobufVersion}"
         dependency "com.netflix.spectator:spectator-api:${spectatorVersion}"
@@ -59,12 +59,6 @@ dependencyManagement {
         dependency "io.rsocket.rpc:rsocket-rpc-metrics-idl:${rsocketRpcVersion}"
         dependency "io.rsocket.rpc:rsocket-rpc-protobuf-idl:${rsocketRpcVersion}"
         dependency "io.rsocket.rpc:rsocket-rpc-protobuf:${rsocketRpcVersion}"
-        dependency "io.rsocket:rsocket-core:${rsocketVersion}"
-        dependency "io.rsocket:rsocket-load-balancer:${rsocketVersion}"
-        dependency "io.rsocket:rsocket-micrometer:${rsocketVersion}"
-        dependency "io.rsocket:rsocket-test:${rsocketVersion}"
-        dependency "io.rsocket:rsocket-transport-local:${rsocketVersion}"
-        dependency "io.rsocket:rsocket-transport-netty:${rsocketVersion}"
         dependency "io.zipkin.reporter2:zipkin-sender-okhttp3:${zipkinSenderVersion}"
         dependency "javax.annotation:javax.annotation-api:${javaxAnnotationVersion}"
         dependency "javax.inject:javax.inject:${javaxInjectVersion}"

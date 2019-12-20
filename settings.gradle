@@ -1,14 +1,14 @@
-pluginManagement {
-    repositories {
-        maven {
-            url 'https://nexus.netifi.com/repository/maven-plugin-group/'
-            credentials {
-                username = "${netifiReadOnlyUsername}"
-                password = "${netifiReadOnlyPassword}"
-            }
-        }
-    }
-}
+//pluginManagement {
+//    repositories {
+//        maven {
+//            url 'https://nexus.netifi.com/repository/maven-plugin-group/'
+//            credentials {
+//                username = "${netifiReadOnlyUsername}"
+//                password = "${netifiReadOnlyPassword}"
+//            }
+//        }
+//    }
+//}
 
 rootProject.name = 'netifi-java'
 
