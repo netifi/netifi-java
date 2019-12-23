@@ -82,13 +82,6 @@ subprojects {
                 password = "${netifiReadOnlyPassword}"
             }
         }
-//        maven {
-//            url 'https://nexus.netifi.com/repository/netifi-oss/'
-//            credentials {
-//                username = "${netifiReadOnlyUsername}"
-//                password = "${netifiReadOnlyPassword}"
-//            }
-//        }
         maven {
             url 'https://nexus.netifi.com/repository/maven-releases/'
             credentials {
