@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-com.google.protobuf:protobuf-java:3.6.1
+com.google.protobuf:protobuf-java:3.7.1
 com.typesafe:config:1.3.3
 io.micrometer:micrometer-core:1.0.6
 io.netty:netty-buffer:4.1.36.Final
@@ -20,9 +20,10 @@ io.netty:netty-transport:4.1.36.Final
 io.opentracing:opentracing-api:0.31.0
 io.projectreactor.netty:reactor-netty:0.8.8.RELEASE
 io.projectreactor:reactor-core:3.2.9.RELEASE
-io.rsocket.rpc:rsocket-rpc-core:0.2.18
-io.rsocket:rsocket-core:0.12.2-RC4
-io.rsocket:rsocket-transport-netty:0.12.2-RC4
+io.rsocket.rpc:rsocket-ipc-core:0.3.0-feature-prioritization-SNAPSHOT
+io.rsocket.rpc:rsocket-rpc-core:0.3.0-feature-prioritization-SNAPSHOT
+io.rsocket:rsocket-core:1.0.0-RC6-bugfix-prioritization-SNAPSHOT
+io.rsocket:rsocket-transport-netty:1.0.0-RC6-bugfix-prioritization-SNAPSHOT
 javax.annotation:javax.annotation-api:1.3.2
 javax.inject:javax.inject:1
 javax.validation:validation-api:2.0.1.Final

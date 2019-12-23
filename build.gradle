@@ -1,7 +1,7 @@
 buildscript {
-//    configurations.classpath {
-//        resolutionStrategy.activateDependencyLocking()
-//    }
+    configurations.classpath {
+        resolutionStrategy.activateDependencyLocking()
+    }
 }
 
 plugins {
@@ -44,9 +44,9 @@ if (details.branchName != null) {
 }
 
 allprojects {
-//    dependencyLocking {
-//        lockAllConfigurations()
-//    }
+    dependencyLocking {
+        lockAllConfigurations()
+    }
     project.version += versionSuffix
     ext {
         uniqueVersion = "${tmpUniqueVersion}"

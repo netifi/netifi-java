@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-com.google.protobuf:protobuf-java:3.6.1
+com.google.protobuf:protobuf-java:3.7.1
 com.typesafe:config:1.3.3
 io.micrometer:micrometer-core:1.0.6
 io.micrometer:micrometer-registry-prometheus:1.0.6
@@ -19,16 +19,18 @@ io.netty:netty-transport-native-epoll:4.1.36.Final
 io.netty:netty-transport-native-unix-common:4.1.36.Final
 io.netty:netty-transport:4.1.36.Final
 io.opentracing:opentracing-api:0.31.0
-io.projectreactor.netty:reactor-netty:0.8.8.RELEASE
-io.projectreactor:reactor-core:3.2.9.RELEASE
-io.projectreactor:reactor-test:3.2.9.RELEASE
+io.projectreactor.addons:reactor-pool:0.1.0.RELEASE
+io.projectreactor.netty:reactor-netty:0.9.0.RELEASE
+io.projectreactor:reactor-core:3.3.0.RELEASE
+io.projectreactor:reactor-test:3.3.0.RELEASE
 io.prometheus:simpleclient:0.4.0
 io.prometheus:simpleclient_common:0.4.0
-io.rsocket.rpc:rsocket-rpc-core:0.2.18
-io.rsocket.rpc:rsocket-rpc-protobuf:0.2.18
-io.rsocket:rsocket-core:0.12.2-RC4
-io.rsocket:rsocket-transport-local:0.12.2-RC4
-io.rsocket:rsocket-transport-netty:0.12.2-RC4
+io.rsocket.rpc:rsocket-ipc-core:0.3.0-feature-prioritization-SNAPSHOT
+io.rsocket.rpc:rsocket-rpc-core:0.3.0-feature-prioritization-SNAPSHOT
+io.rsocket.rpc:rsocket-rpc-protobuf:0.3.0-feature-prioritization-SNAPSHOT
+io.rsocket:rsocket-core:1.0.0-RC6-bugfix-prioritization-SNAPSHOT
+io.rsocket:rsocket-transport-local:1.0.0-RC6-bugfix-prioritization-SNAPSHOT
+io.rsocket:rsocket-transport-netty:1.0.0-RC6-bugfix-prioritization-SNAPSHOT
 javax.annotation:javax.annotation-api:1.3.2
 javax.inject:javax.inject:1
 junit:junit:4.12
@@ -42,5 +44,5 @@ org.hdrhistogram:HdrHistogram:2.1.10
 org.latencyutils:LatencyUtils:2.0.3
 org.mockito:mockito-core:2.25.0
 org.objenesis:objenesis:2.6
-org.reactivestreams:reactive-streams:1.0.2
+org.reactivestreams:reactive-streams:1.0.3
 org.slf4j:slf4j-api:1.7.25
