@@ -17,7 +17,7 @@ package com.netifi.broker.tracing;
 
 import brave.Tracing;
 import brave.opentracing.BraveTracer;
-import com.netifi.broker.BrokerClient;
+import com.netifi.broker.BrokerService;
 import com.netifi.broker.rsocket.BrokerSocket;
 import io.opentracing.Tracer;
 import java.util.Optional;
@@ -30,7 +30,7 @@ public class BrokerTracerSupplier implements Supplier<Tracer> {
   private final Tracer tracer;
 
   @Inject
-  public BrokerTracerSupplier(BrokerClient brokerClient, Optional<String> tracingGroup) {
+  public BrokerTracerSupplier(BrokerService brokerClient, Optional<String> tracingGroup) {
     BrokerSocket brokerSocket =
         brokerClient.group(tracingGroup.orElse("com.netifi.broker.tracing"));
 
@@ -38,7 +38,7 @@ public class BrokerTracerSupplier implements Supplier<Tracer> {
         new BrokerTracingServiceClient(brokerSocket);
     BrokerReporter reporter =
         new BrokerReporter(
-            brokerTracingServiceClient, brokerClient.getGroupName(), brokerClient.getTags());
+            brokerTracingServiceClient, brokerClient.groupName(), brokerClient.tags());
 
     Tracing tracing = Tracing.newBuilder().spanReporter(reporter).build();
 

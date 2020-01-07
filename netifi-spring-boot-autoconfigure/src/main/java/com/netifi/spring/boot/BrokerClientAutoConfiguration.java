@@ -16,23 +16,23 @@
 package com.netifi.spring.boot;
 
 import com.netifi.broker.BrokerClient;
+import com.netifi.broker.BrokerFactory;
+import com.netifi.broker.BrokerService;
+import com.netifi.broker.RoutingBrokerService;
 import com.netifi.broker.discovery.*;
 import com.netifi.broker.micrometer.BrokerMeterRegistrySupplier;
-import com.netifi.broker.rsocket.transport.BrokerAddressSelectors;
 import com.netifi.broker.tracing.BrokerTracerSupplier;
 import com.netifi.common.tags.Tag;
 import com.netifi.common.tags.Tags;
-import com.netifi.spring.boot.support.BrokerClientConfigurer;
+import com.netifi.spring.boot.support.BrokerServiceConfigurer;
 import com.netifi.spring.core.BrokerClientTagSupplier;
 import com.netifi.spring.core.config.BrokerClientConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.netty.handler.ssl.OpenSsl;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.SslProvider;
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.opentracing.Tracer;
-import io.rsocket.transport.netty.client.TcpClientTransport;
-import io.rsocket.transport.netty.client.WebsocketClientTransport;
+import io.rsocket.ipc.MutableRouter;
+import io.rsocket.ipc.Router;
+import io.rsocket.ipc.routing.SimpleRouter;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
@@ -52,24 +52,23 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.annotation.Order;
 import org.springframework.util.StringUtils;
-import reactor.core.Exceptions;
-import reactor.netty.tcp.TcpClient;
 
 @Configuration
 @EnableConfigurationProperties(BrokerClientProperties.class)
 @AutoConfigureBefore(BrokerClientConfiguration.class)
 public class BrokerClientAutoConfiguration {
 
-  static BrokerClient configureBrokerClient(List<? extends BrokerClientConfigurer> configurers) {
-    BrokerClient.CustomizableBuilder builder = BrokerClient.customizable();
+  static RoutingBrokerService configureBrokerClient(
+      MutableRouter router, List<? extends BrokerServiceConfigurer> configurers) {
+    BrokerFactory.ClientBuilder clientBuilder = BrokerFactory.connect();
 
     AnnotationAwareOrderComparator.sort(configurers);
 
-    for (BrokerClientConfigurer configurer : configurers) {
-      builder = configurer.configure(builder);
+    for (BrokerServiceConfigurer configurer : configurers) {
+      configurer.configure(clientBuilder);
     }
 
-    return builder.build();
+    return clientBuilder.toRoutingService(router);
   }
 
   @Bean(name = "internalScanClassPathBeanDefinitionRegistryPostProcessor")
@@ -79,7 +78,7 @@ public class BrokerClientAutoConfiguration {
 
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE)
-  public BrokerClientConfigurer propertiesBasedBrokerClientConfigurer(
+  public BrokerServiceConfigurer propertiesBasedBrokerClientConfigurer(
       BrokerClientTagSupplier brokerClientTagSupplier,
       BrokerClientProperties brokerClientProperties) {
     return builder -> {
@@ -88,23 +87,19 @@ public class BrokerClientAutoConfiguration {
       BrokerClientProperties.BrokerProperties broker = brokerClientProperties.getBroker();
       BrokerClientProperties.DiscoveryProperties discovery = brokerClientProperties.getDiscovery();
       BrokerClientProperties.KeepAliveProperties keepalive = brokerClientProperties.getKeepalive();
-
-      if (!StringUtils.isEmpty(brokerClientProperties.getDestination())) {
-        builder.destination(brokerClientProperties.getDestination());
-      }
-
       BrokerClientProperties.ConnectionType connectionType;
+      DiscoveryStrategy discoveryStrategy;
 
       if (!StringUtils.isEmpty(broker.getHostname())) {
         // support the legacy usecase first
-        builder.host(broker.getHostname());
-        builder.port(broker.getPort());
+        discoveryStrategy =
+            new StaticListDiscoveryStrategy(
+                new StaticListDiscoveryConfig(broker.getPort(), broker.getHostname()));
 
         connectionType = broker.getConnectionType();
 
       } else if (!StringUtils.isEmpty(discovery.getEnvironment())) {
         // if not legacy, then we're propbably using the new discovery api.
-        DiscoveryStrategy discoveryStrategy;
         switch (discovery.getEnvironment()) {
           case "static":
             BrokerClientProperties.DiscoveryProperties.StaticProperties staticProperties =
@@ -150,117 +145,94 @@ public class BrokerClientAutoConfiguration {
             throw new RuntimeException(
                 "unsupported discovery strategy " + discovery.getEnvironment());
         }
-        builder.discoveryStrategy(discoveryStrategy);
+
       } else {
         throw new RuntimeException("discovery not configured and required");
       }
+      builder
+          .discoveryStrategy(spec -> spec.custom(discoveryStrategy))
+          .connection(
+              spec -> {
+                boolean sslDisabled = ssl.isDisabled();
+                BrokerFactory.ConnectionConfig.TcpBasedBuilder<?> tcpSpec = null;
+                switch (connectionType) {
+                  case TCP:
+                    tcpSpec = spec.tcp();
+                    break;
+                  case WS:
+                    tcpSpec = spec.ws();
+                    break;
+                }
 
-      Tags tags = Tags.empty();
-      if (brokerClientProperties.getTags() != null && !brokerClientProperties.getTags().isEmpty()) {
-        for (String t : brokerClientProperties.getTags()) {
-          String[] split = t.split(":");
-          Tag tag = Tag.of(split[0], split[1]);
-          tags = tags.and(tag);
-        }
-      }
+                if (tcpSpec != null) {
+                  tcpSpec.ssl(
+                      sslSpec -> {
+                        if (sslDisabled) {
+                          sslSpec.unsecured();
+                        } else {
+                          sslSpec.secured();
+                        }
+                      });
+                }
+              })
+          .destinationInfo(
+              spec -> {
+                if (!StringUtils.isEmpty(brokerClientProperties.getDestination())) {
+                  spec.destinationTag(brokerClientProperties.getDestination());
+                }
 
-      Tags suppliedTags = brokerClientTagSupplier.get();
+                Tags tags = Tags.empty();
+                if (brokerClientProperties.getTags() != null
+                    && !brokerClientProperties.getTags().isEmpty()) {
+                  for (String t : brokerClientProperties.getTags()) {
+                    String[] split = t.split(":");
+                    Tag tag = Tag.of(split[0], split[1]);
+                    tags = tags.and(tag);
+                  }
+                }
 
-      if (suppliedTags != null) {
-        tags = tags.and(suppliedTags);
-      }
+                Tags suppliedTags = brokerClientTagSupplier.get();
 
-      boolean sslDisabled = ssl.isDisabled();
+                if (suppliedTags != null) {
+                  tags = tags.and(suppliedTags);
+                }
+                if (brokerClientProperties.isPublic()) {
+                  spec.asPublicDestination();
+                } else {
+                  spec.asPrivateDestination();
+                }
 
-      if (connectionType == BrokerClientProperties.ConnectionType.TCP) {
-        builder.addressSelector(BrokerAddressSelectors.TCP_ADDRESS);
-        builder.clientTransportFactory(
-            address -> {
-              if (sslDisabled) {
-                TcpClient client = TcpClient.create().addressSupplier(() -> address);
-                return TcpClientTransport.create(client);
-              } else {
-                TcpClient client =
-                    TcpClient.create()
-                        .addressSupplier(() -> address)
-                        .secure(
-                            spec -> {
-                              final SslProvider sslProvider;
-                              if (OpenSsl.isAvailable()) {
-                                sslProvider = SslProvider.OPENSSL_REFCNT;
-                              } else {
-                                sslProvider = SslProvider.JDK;
-                              }
-
-                              try {
-                                spec.sslContext(
-                                    SslContextBuilder.forClient()
-                                        .trustManager(InsecureTrustManagerFactory.INSTANCE)
-                                        .sslProvider(sslProvider)
-                                        .build());
-                              } catch (Exception sslException) {
-                                throw Exceptions.propagate(sslException);
-                              }
-                            });
-
-                return TcpClientTransport.create(client);
-              }
-            });
-      } else if (connectionType == BrokerClientProperties.ConnectionType.WS) {
-        builder.addressSelector(BrokerAddressSelectors.WEBSOCKET_ADDRESS);
-        builder.tags(tags);
-        builder.clientTransportFactory(
-            address -> {
-              if (sslDisabled) {
-                TcpClient client = TcpClient.create().addressSupplier(() -> address);
-                return WebsocketClientTransport.create(client);
-              } else {
-                TcpClient client =
-                    TcpClient.create()
-                        .addressSupplier(() -> address)
-                        .secure(
-                            spec -> {
-                              final SslProvider sslProvider;
-                              if (OpenSsl.isAvailable()) {
-                                sslProvider = SslProvider.OPENSSL_REFCNT;
-                              } else {
-                                sslProvider = SslProvider.JDK;
-                              }
-
-                              try {
-                                spec.sslContext(
-                                    SslContextBuilder.forClient()
-                                        .trustManager(InsecureTrustManagerFactory.INSTANCE)
-                                        .sslProvider(sslProvider)
-                                        .build());
-                              } catch (Exception sslException) {
-                                throw Exceptions.propagate(sslException);
-                              }
-                            });
-                return WebsocketClientTransport.create(client);
-              }
-            });
-      }
-
-      return builder
-          .keepalive(keepalive.isEnabled())
-          .ackTimeoutSeconds(keepalive.getAckTimeoutSeconds())
-          .tickPeriodSeconds(keepalive.getTickPeriodSeconds())
-          .missedAcks(keepalive.getMissedAcks())
-          .accessKey(access.getKey())
-          .accessToken(access.getToken())
-          .group(brokerClientProperties.getGroup())
-          .isPublic(brokerClientProperties.isPublic())
+                spec.tags(tags).groupName(brokerClientProperties.getGroup());
+              })
+          .keepAlive(
+              spec -> {
+                if (keepalive.isEnabled()) {
+                  spec.configure()
+                      .acknowledgeTimeout(Duration.ofSeconds(keepalive.getAckTimeoutSeconds()))
+                      .tickPeriod(Duration.ofSeconds(keepalive.getTickPeriodSeconds()))
+                      .missedAcknowledges(keepalive.getMissedAcks());
+                }
+              })
+          .authentication(spec -> spec.simple().token(access.getToken()).key(access.getKey()))
           .poolSize(brokerClientProperties.getPoolSize());
     };
   }
 
   @Configuration
   @ConditionalOnMissingBean(BrokerClientTagSupplier.class)
-  public static class BrokerTagSupplierConfiguations {
+  public static class BrokerTagSupplierConfigurations {
     @Bean
     public BrokerClientTagSupplier brokerClientTagSupplier() {
       return Tags::empty;
+    }
+  }
+
+  @Configuration
+  @ConditionalOnMissingBean(Router.class)
+  public static class RouterConfiguration {
+    @Bean
+    public MutableRouter mutableRouter() {
+      return new SimpleRouter();
     }
   }
 
@@ -271,7 +243,7 @@ public class BrokerClientAutoConfiguration {
 
     @Bean
     public MeterRegistry meterRegistry(
-        BrokerClient brokerClient, BrokerClientProperties properties) {
+        BrokerService brokerClient, BrokerClientProperties properties) {
       return new BrokerMeterRegistrySupplier(
               brokerClient,
               Optional.of(properties.getMetrics().getGroup()),
@@ -287,7 +259,7 @@ public class BrokerClientAutoConfiguration {
   public static class TracingConfigurations {
 
     @Bean
-    public Tracer tracer(BrokerClient brokerClient, BrokerClientProperties properties) {
+    public Tracer tracer(BrokerService brokerClient, BrokerClientProperties properties) {
       return new BrokerTracerSupplier(brokerClient, Optional.of(properties.getTracing().getGroup()))
           .get();
     }
@@ -295,14 +267,15 @@ public class BrokerClientAutoConfiguration {
 
   @Configuration
   @ConditionalOnNotWebApplication
-  @ConditionalOnMissingBean(BrokerClient.class)
+  @ConditionalOnMissingBean({BrokerService.class})
   public static class NonWebBrokerClientConfiguration {
 
     @Bean
-    public BrokerClient brokerClient(
-        List<? extends BrokerClientConfigurer> configurers,
+    public RoutingBrokerService routingBrokerService(
+        MutableRouter router,
+        List<? extends BrokerServiceConfigurer> configurers,
         ConfigurableApplicationContext context) {
-      BrokerClient brokerClient = configureBrokerClient(configurers);
+      RoutingBrokerService brokerClient = configureBrokerClient(router, configurers);
 
       startDaemonAwaitThread(brokerClient);
 
@@ -318,9 +291,9 @@ public class BrokerClientAutoConfiguration {
       return brokerClient;
     }
 
-    private void startDaemonAwaitThread(BrokerClient brokerClient) {
+    private void startDaemonAwaitThread(BrokerService brokerClient) {
       Thread awaitThread =
-          new Thread("broker-client-thread") {
+          new Thread("broker-service-thread") {
 
             @Override
             public void run() {
@@ -331,16 +304,27 @@ public class BrokerClientAutoConfiguration {
       awaitThread.setDaemon(false);
       awaitThread.start();
     }
+
+    @Bean
+    public BrokerClient routingBrokerService(RoutingBrokerService routingBrokerService) {
+      return BrokerClient.from(routingBrokerService);
+    }
   }
 
   @Configuration
   @ConditionalOnWebApplication
-  @ConditionalOnMissingBean(BrokerClient.class)
+  @ConditionalOnMissingBean({BrokerService.class})
   public static class WebBrokerClientConfiguration {
 
     @Bean
-    public BrokerClient brokerClient(List<? extends BrokerClientConfigurer> configurers) {
-      return configureBrokerClient(configurers);
+    public RoutingBrokerService routingBrokerService(
+        MutableRouter router, List<? extends BrokerServiceConfigurer> configurers) {
+      return configureBrokerClient(router, configurers);
+    }
+
+    @Bean
+    public BrokerClient routingBrokerService(RoutingBrokerService routingBrokerService) {
+      return BrokerClient.from(routingBrokerService);
     }
   }
 }

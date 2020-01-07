@@ -20,7 +20,6 @@ import com.netifi.common.tags.Tags;
 import com.typesafe.config.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +28,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Gets current default configuration for {@link BrokerClient.Builder}. Can be overriden with System
+ * Gets current default configuration for {@link BrokerFactory}. Can be overridden with
+ * System
  * properties, or if the application provides a config file. The builder will over-ride these values
  * if they are based directly in to the builder. Otherwise it will these values a default.
  */
@@ -293,8 +293,8 @@ final class DefaultBuilderConfig {
     return exportSystemMetrics;
   }
 
-  static List<SocketAddress> getSeedAddress() {
-    List<SocketAddress> seedAddresses = null;
+  static List<InetSocketAddress> getSeedAddress() {
+    List<InetSocketAddress> seedAddresses = null;
     try {
       String s = conf.getString("netifi.client.seedAddresses");
       if (s != null) {

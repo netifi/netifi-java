@@ -18,7 +18,6 @@ package com.netifi.broker;
 import com.netifi.common.tags.Tag;
 import com.netifi.common.tags.Tags;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Assert;
@@ -31,7 +30,7 @@ public class DefaultBuilderConfigTest {
   @Test
   public void testShouldFindSingleSeedAddress() {
     System.setProperty("netifi.client.seedAddresses", "localhost:8001");
-    List<SocketAddress> seedAddress = DefaultBuilderConfig.getSeedAddress();
+    List<InetSocketAddress> seedAddress = DefaultBuilderConfig.getSeedAddress();
     Assert.assertNotNull(seedAddress);
     Assert.assertEquals(1, seedAddress.size());
 
@@ -43,7 +42,7 @@ public class DefaultBuilderConfigTest {
   public void testShouldFindMultipleSeedAddresses() {
     System.setProperty(
         "netifi.client.seedAddresses", "localhost:8001,localhost:8002,localhost:8003");
-    List<SocketAddress> seedAddress = DefaultBuilderConfig.getSeedAddress();
+    List<InetSocketAddress> seedAddress = DefaultBuilderConfig.getSeedAddress();
     Assert.assertNotNull(seedAddress);
     Assert.assertEquals(3, seedAddress.size());
 
@@ -54,13 +53,13 @@ public class DefaultBuilderConfigTest {
   @Test(expected = IllegalStateException.class)
   public void testShouldThrowExceptionForAddressMissingPort() {
     System.setProperty("netifi.client.seedAddresses", "localhost:8001,localhost,localhost:8003");
-    List<SocketAddress> seedAddress = DefaultBuilderConfig.getSeedAddress();
+    List<InetSocketAddress> seedAddress = DefaultBuilderConfig.getSeedAddress();
   }
 
   @Test(expected = IllegalStateException.class)
   public void testShouldThrowExceptionForInvalidAddress() {
     System.setProperty("netifi.client.seedAddresses", "no way im valid");
-    List<SocketAddress> seedAddress = DefaultBuilderConfig.getSeedAddress();
+    List<InetSocketAddress> seedAddress = DefaultBuilderConfig.getSeedAddress();
   }
 
   @Test
@@ -75,7 +74,7 @@ public class DefaultBuilderConfigTest {
 
   @Test
   public void testShouldReturnNull() {
-    List<SocketAddress> seedAddress = DefaultBuilderConfig.getSeedAddress();
+    List<InetSocketAddress> seedAddress = DefaultBuilderConfig.getSeedAddress();
 
     Assert.assertNull(seedAddress);
   }

@@ -1,17 +1,17 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ *    Copyright 2019 The Netifi Authors
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  */
 
 package com.netifi.spring.messaging;
@@ -21,7 +21,9 @@ import static com.netifi.spring.messaging.RSocketRequesterStaticFactory.createRS
 import static com.netifi.spring.messaging.RSocketRequesterStaticFactory.resolveBrokerClientRSocket;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 
-import com.netifi.broker.BrokerClient;
+import com.netifi.broker.BrokerService;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.opentracing.Tracer;
 import io.rsocket.RSocket;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.core.MethodParameter;
@@ -32,29 +34,25 @@ import org.springframework.messaging.rsocket.RSocketStrategies;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
-/**
- * Resolves arguments of type {@link RSocket} that can be used for making requests to the remote
- * peer.
- *
- * @author Rossen Stoyanchev
- * @since 5.2
- */
 public class BrokerClientRequesterMethodArgumentResolver implements HandlerMethodArgumentResolver {
 
-  private final String rSocketName;
-  private final BrokerClient brokerClient;
+  private final BrokerService brokerClient;
   private final DefaultListableBeanFactory listableBeanFactory;
   private final RSocketStrategies rSocketStrategies;
+  private final MeterRegistry registry;
+  private final Tracer tracer;
 
   public BrokerClientRequesterMethodArgumentResolver(
-      String rSocketName,
-      BrokerClient client,
+      BrokerService client,
       DefaultListableBeanFactory factory,
-      RSocketStrategies strategies) {
-    this.rSocketName = rSocketName;
-    brokerClient = client;
-    listableBeanFactory = factory;
-    rSocketStrategies = strategies;
+      RSocketStrategies strategies,
+      MeterRegistry registry,
+      Tracer tracer) {
+    this.brokerClient = client;
+    this.listableBeanFactory = factory;
+    this.rSocketStrategies = strategies;
+    this.registry = registry;
+    this.tracer = tracer;
   }
 
   @Override
@@ -77,15 +75,15 @@ public class BrokerClientRequesterMethodArgumentResolver implements HandlerMetho
     if (RSocketRequester.class.equals(type)) {
       return Mono.just(
           createRSocketRequester(
-              rSocketName,
               brokerClient,
               brokerClientAnnotation,
               resolveTags(listableBeanFactory, brokerClientAnnotation),
-              rSocketStrategies));
+              rSocketStrategies,
+              registry,
+              tracer));
     } else if (RSocket.class.isAssignableFrom(type)) {
       return Mono.just(
           resolveBrokerClientRSocket(
-              rSocketName,
               brokerClient,
               brokerClientAnnotation.type(),
               brokerClientAnnotation.group(),

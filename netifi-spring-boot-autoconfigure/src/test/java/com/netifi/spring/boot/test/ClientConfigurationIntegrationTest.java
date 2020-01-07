@@ -18,9 +18,7 @@ package com.netifi.spring.boot.test;
 import static org.mockito.ArgumentMatchers.any;
 
 import com.netifi.broker.BrokerClient;
-import com.netifi.spring.boot.BrokerClientAutoConfiguration;
 import com.netifi.spring.boot.support.BrokerClientConfigurer;
-import com.netifi.spring.core.config.BrokerClientConfiguration;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,19 +28,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
+@SpringBootTest(classes = {
+        com.netifi.spring.boot.BrokerClientAutoConfiguration.class,
+        com.netifi.spring.boot.BrokerClientMessagingAutoConfiguration.class,
+        com.netifi.spring.core.config.BrokerClientConfiguration.class
+})
 public class ClientConfigurationIntegrationTest {
 
   @Autowired
   @Qualifier("mock2")
   BrokerClientConfigurer configurer;
 
-  @Autowired
-  BrokerClient brokerClient;
+  @Autowired BrokerClient brokerClient;
 
   @Test
   public void testThatConfigurerWorks() {
@@ -56,7 +56,7 @@ public class ClientConfigurationIntegrationTest {
   }
 
   @org.springframework.boot.test.context.TestConfiguration
-//  @ComponentScan
+  //  @ComponentScan
   static class TestConfiguration {
 
     @Bean

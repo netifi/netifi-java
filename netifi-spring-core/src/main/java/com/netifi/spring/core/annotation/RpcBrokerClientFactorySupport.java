@@ -8,12 +8,12 @@ import io.rsocket.RSocket;
 
 public class RpcBrokerClientFactorySupport implements BrokerClientFactorySupport {
 
-  private final com.netifi.broker.BrokerClient brokerClient;
+  private final com.netifi.broker.BrokerService brokerClient;
   private final Tracer tracer;
   private final MeterRegistry meterRegistry;
 
   public RpcBrokerClientFactorySupport(
-      com.netifi.broker.BrokerClient client, MeterRegistry registry, Tracer tracer) {
+      com.netifi.broker.BrokerService client, MeterRegistry registry, Tracer tracer) {
     brokerClient = client;
     this.tracer = tracer;
     meterRegistry = registry;

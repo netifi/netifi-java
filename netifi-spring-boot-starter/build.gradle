@@ -7,6 +7,7 @@ description = 'Netifi Spring Boot Starter'
 dependencies {
     compile project(':netifi-spring-boot-autoconfigure')
     compile project(':netifi-spring-core')
+    compile project(':netifi-spring-messaging')
 
     compile 'org.springframework.boot:spring-boot-starter'
 }

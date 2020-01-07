@@ -1,5 +1,7 @@
 apply plugin: 'io.spring.dependency-management'
 
+ext["rsocket.version"] = rsocketVersion
+
 dependencyManagement {
     imports {
         mavenBom "io.rsocket:rsocket-bom:${rsocketVersion}"
@@ -11,6 +13,7 @@ dependencyManagement {
         mavenBom "software.amazon.awssdk:bom:${awssdkVersion}"
         mavenBom "io.rsocket:rsocket-bom:${rsocketVersion}"
         mavenBom "com.google.protobuf:protobuf-bom:${protobufVersion}"
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootDependenciesVersion}"
     }
 
     dependencies {

@@ -11,7 +11,7 @@ dependencies {
     testCompile 'junit:junit'
     testCompile 'javax.inject:javax.inject'
     testCompile 'io.projectreactor:reactor-test'
-    testCompile "com.google.protobuf:protobuf-java"
+    testCompile 'com.google.protobuf:protobuf-java'
     testCompile 'org.hdrhistogram:HdrHistogram'
     testCompile 'org.apache.logging.log4j:log4j-api'
     testCompile 'org.apache.logging.log4j:log4j-core'

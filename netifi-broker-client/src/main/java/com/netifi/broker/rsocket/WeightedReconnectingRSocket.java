@@ -62,8 +62,8 @@ public class WeightedReconnectingRSocket implements WeightedRSocket {
   private final Supplier<Payload> setupPayloadSupplier;
   private final BooleanSupplier running;
   private final boolean keepalive;
-  private final long tickPeriodSeconds;
-  private final long ackTimeoutSeconds;
+  private final Duration tickPeriod;
+  private final Duration ackTimeout;
   private final int missedAcks;
   private final RSocket requestHandlingRSocket;
   private final long accessKey;
@@ -91,8 +91,8 @@ public class WeightedReconnectingRSocket implements WeightedRSocket {
       final BooleanSupplier running,
       final Supplier<WeightedClientTransportSupplier> transportSupplier,
       final boolean keepalive,
-      final long tickPeriodSeconds,
-      final long ackTimeoutSeconds,
+      final Duration tickPeriod,
+      final Duration ackTimeout,
       final int missedAcks,
       final long accessKey,
       final ByteBuf accessToken,
@@ -121,8 +121,8 @@ public class WeightedReconnectingRSocket implements WeightedRSocket {
     this.keepalive = keepalive;
     this.accessKey = accessKey;
     this.accessToken = accessToken;
-    this.tickPeriodSeconds = tickPeriodSeconds;
-    this.ackTimeoutSeconds = ackTimeoutSeconds;
+    this.tickPeriod = tickPeriod;
+    this.ackTimeout = ackTimeout;
     this.missedAcks = missedAcks;
   }
 
@@ -132,8 +132,8 @@ public class WeightedReconnectingRSocket implements WeightedRSocket {
       final BooleanSupplier running,
       final Supplier<WeightedClientTransportSupplier> transportSupplier,
       final boolean keepalive,
-      final long tickPeriodSeconds,
-      final long ackTimeoutSeconds,
+      final Duration tickPeriod,
+      final Duration ackTimeout,
       final int missedAcks,
       final long accessKey,
       final ByteBuf accessToken,
@@ -147,8 +147,8 @@ public class WeightedReconnectingRSocket implements WeightedRSocket {
             running,
             transportSupplier,
             keepalive,
-            tickPeriodSeconds,
-            ackTimeoutSeconds,
+            tickPeriod,
+            ackTimeout,
             missedAcks,
             accessKey,
             accessToken,
@@ -197,18 +197,9 @@ public class WeightedReconnectingRSocket implements WeightedRSocket {
     ClientRSocketFactory connect = RSocketFactory.connect().frameDecoder(PayloadDecoder.ZERO_COPY);
 
     if (keepalive) {
-      connect =
-          connect
-              .keepAlive()
-              .keepAliveTickPeriod(Duration.ofSeconds(tickPeriodSeconds))
-              .keepAliveAckTimeout(Duration.ofSeconds(ackTimeoutSeconds))
-              .keepAliveMissedAcks(missedAcks);
+      connect = connect.keepAlive(tickPeriod, ackTimeout, missedAcks);
     } else {
-      connect
-          .keepAlive()
-          .keepAliveTickPeriod(Duration.ofSeconds(0))
-          .keepAliveAckTimeout(Duration.ofSeconds(0))
-          .keepAliveMissedAcks(missedAcks);
+      connect = connect.keepAlive(Duration.ofSeconds(0), Duration.ofSeconds(0), missedAcks);
     }
 
     return connect.setupPayload(setupPayloadSupplier.get());
@@ -635,10 +626,10 @@ public class WeightedReconnectingRSocket implements WeightedRSocket {
         + running
         + ", keepalive="
         + keepalive
-        + ", tickPeriodSeconds="
-        + tickPeriodSeconds
-        + ", ackTimeoutSeconds="
-        + ackTimeoutSeconds
+        + ", tickPeriodMillis="
+        + tickPeriod.toMillis()
+        + ", ackTimeoutMillis="
+        + ackTimeout.toMillis()
         + ", missedAcks="
         + missedAcks
         + ", accessKey="

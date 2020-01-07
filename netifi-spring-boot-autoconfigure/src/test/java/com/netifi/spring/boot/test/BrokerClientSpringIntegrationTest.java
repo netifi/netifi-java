@@ -18,7 +18,6 @@ package com.netifi.spring.boot.test;
 import com.netifi.broker.info.BrokerInfoService;
 import com.netifi.broker.info.BrokerInfoServiceClient;
 import com.netifi.spring.DefaultExternalIdlClient;
-import com.netifi.spring.boot.BrokerClientAutoConfiguration;
 import com.netifi.spring.core.BroadcastAwareClientFactory;
 import com.netifi.spring.core.DestinationAwareClientFactory;
 import com.netifi.spring.core.GroupAwareClientFactory;
@@ -26,7 +25,6 @@ import com.netifi.spring.core.annotation.Broadcast;
 import com.netifi.spring.core.annotation.BrokerClient;
 import com.netifi.spring.core.annotation.Destination;
 import com.netifi.spring.core.annotation.Group;
-import com.netifi.spring.core.config.BrokerClientConfiguration;
 import io.rsocket.rpc.metrics.om.MetricsSnapshotHandler;
 import io.rsocket.rpc.metrics.om.MetricsSnapshotHandlerClient;
 import org.junit.jupiter.api.Assertions;
@@ -35,13 +33,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Primary;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
@@ -87,6 +83,8 @@ public class BrokerClientSpringIntegrationTest {
 
   @Autowired com.netifi.broker.BrokerClient brokerClient;
 
+  @Autowired com.netifi.broker.BrokerService brokerService;
+
   @Autowired ConfigurableApplicationContext context;
 
   @Test
@@ -113,6 +111,12 @@ public class BrokerClientSpringIntegrationTest {
     @Primary
     public com.netifi.broker.BrokerClient mockedBrokerClient() {
       return Mockito.mock(com.netifi.broker.BrokerClient.class);
+    }
+
+    @Bean
+    @Primary
+    public com.netifi.broker.RoutingBrokerService mockedRoutingBrokerService() {
+      return Mockito.mock(com.netifi.broker.RoutingBrokerService.class);
     }
   }
 }

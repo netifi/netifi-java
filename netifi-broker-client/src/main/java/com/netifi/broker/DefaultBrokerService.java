@@ -38,7 +38,6 @@ import io.netty.util.ReferenceCountUtil;
 import io.opentracing.Tracer;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
-import io.rsocket.ResponderRSocket;
 import io.rsocket.transport.ClientTransport;
 import io.rsocket.util.ByteBufPayload;
 import java.net.InetAddress;
@@ -60,7 +59,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoProcessor;
 
-public class DefaultBrokerService implements BrokerService, Disposable {
+public class DefaultBrokerService implements BrokerService, Disposable, InstanceInfoAware {
+  static {
+    // Set the Java DNS cache to 60 seconds
+    java.security.Security.setProperty("networkaddress.cache.ttl", "60");
+  }
+
   private static final Logger logger = LoggerFactory.getLogger(DefaultBrokerService.class);
   private static final double EXP_FACTOR = 4.0;
   private static final double DEFAULT_LOWER_QUANTILE = 0.5;
@@ -77,8 +81,8 @@ public class DefaultBrokerService implements BrokerService, Disposable {
   private final InetAddress localInetAddress;
   private final String group;
   private final boolean keepalive;
-  private final long tickPeriodSeconds;
-  private final long ackTimeoutSeconds;
+  private final Duration tickPeriod;
+  private final Duration ackTimeout;
   private final int missedAcks;
   private final long accessKey;
   private final ByteBuf accessToken;
@@ -100,37 +104,27 @@ public class DefaultBrokerService implements BrokerService, Disposable {
   private volatile Disposable disposable;
 
   public DefaultBrokerService(
-      List<SocketAddress> seedAddresses,
-      ResponderRSocket requestHandlingRSocket,
+      RSocket requestHandlingRSocket,
       boolean responderRequiresUnwrapping,
       InetAddress localInetAddress,
       String group,
+      Tags tags,
+      String connectionName,
       Function<Broker, InetSocketAddress> addressSelector,
       Function<SocketAddress, ClientTransport> clientTransportFactory,
-      int poolSize,
+      DiscoveryStrategy discoveryStrategy,
       boolean keepalive,
-      long tickPeriodSeconds,
-      long ackTimeoutSeconds,
+      Duration tickPeriod,
+      Duration ackTimeout,
       int missedAcks,
       long accessKey,
       ByteBuf accessToken,
-      String connectionIdSeed,
       short additionalSetupFlags,
-      Tags tags,
-      Tracer tracer,
-      DiscoveryStrategy discoveryStrategy) {
+      int poolSize,
+      Tracer tracer) {
 
     this.discoveryStrategy = discoveryStrategy;
-
-    if (discoveryStrategy == null) {
-      if (seedAddresses.isEmpty()) {
-        throw new IllegalStateException("seedAddress is empty");
-      } else {
-        this.seedAddresses = seedAddresses;
-      }
-    } else {
-      this.seedAddresses = new CopyOnWriteArrayList<>();
-    }
+    this.seedAddresses = new CopyOnWriteArrayList<>();
 
     Objects.requireNonNull(accessToken);
     if (accessToken.readableBytes() == 0) {
@@ -153,21 +147,19 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     this.selectRefreshTimeout = System.currentTimeMillis();
     this.selectRefreshTimeoutDuration = 10_000;
     this.keepalive = keepalive;
-    this.tickPeriodSeconds = tickPeriodSeconds;
-    this.ackTimeoutSeconds = ackTimeoutSeconds;
+    this.tickPeriod = tickPeriod;
+    this.ackTimeout = ackTimeout;
     this.missedAcks = missedAcks;
     this.accessKey = accessKey;
     this.accessToken = accessToken;
-    this.connectionIdSeed = connectionIdSeed;
+    this.connectionIdSeed = connectionName;
     this.additionalSetupFlags = additionalSetupFlags;
     this.tags = tags;
     this.setupMetadata = new ArrayList<>();
     this.onClose = MonoProcessor.create();
 
-    if (discoveryStrategy != null) {
-      logger.info("discovery strategy found using " + discoveryStrategy.getClass());
-      useDiscoveryStrategy();
-    }
+    logger.info("discovery strategy found using " + discoveryStrategy.getClass());
+    useDiscoveryStrategy();
 
     this.client =
         new BrokerInfoServiceClient(group("com.netifi.broker.brokerServices", Tags.empty()));
@@ -430,8 +422,8 @@ public class DefaultBrokerService implements BrokerService, Disposable {
         this::isDisposed,
         this::selectClientTransportSupplier,
         keepalive,
-        tickPeriodSeconds,
-        ackTimeoutSeconds,
+        tickPeriod,
+        ackTimeout,
         missedAcks,
         accessKey,
         accessToken,
@@ -548,6 +540,23 @@ public class DefaultBrokerService implements BrokerService, Disposable {
     }
 
     return rSocket;
+  }
+
+  public Tags tags() {
+    return tags;
+  }
+
+  public long accessKey() {
+    return accessKey;
+  }
+
+  public String groupName() {
+    return group;
+  }
+
+  @Override
+  public Mono<Void> onClose() {
+    return onClose;
   }
 
   private static double algorithmicWeight(

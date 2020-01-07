@@ -26,8 +26,14 @@ import io.netty.buffer.ByteBufAllocator;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
 import io.rsocket.util.ByteBufPayload;
+import reactor.core.Disposable;
+import reactor.core.publisher.Mono;
 
-interface BrokerService {
+public interface BrokerService extends Disposable, InstanceInfoAware {
+  default BrokerSocket group(CharSequence group) {
+    return group(group, Tags.empty());
+  }
+
   default BrokerSocket group(CharSequence group, Tags tags) {
     return new DefaultBrokerSocket(
         payload -> {
@@ -42,6 +48,10 @@ interface BrokerService {
         this::selectRSocket);
   }
 
+  default BrokerSocket broadcast(CharSequence group) {
+    return broadcast(group, Tags.empty());
+  }
+
   default BrokerSocket broadcast(CharSequence group, Tags tags) {
     return new DefaultBrokerSocket(
         payload -> {
@@ -54,6 +64,10 @@ interface BrokerService {
           return wrappedPayload;
         },
         this::selectRSocket);
+  }
+
+  default BrokerSocket shard(CharSequence group, ByteBuf shardKey) {
+    return shard(group, shardKey, Tags.empty());
   }
 
   default BrokerSocket shard(CharSequence group, ByteBuf shardKey, Tags tags) {
@@ -72,4 +86,6 @@ interface BrokerService {
   }
 
   RSocket selectRSocket();
+
+  Mono<Void> onClose();
 }

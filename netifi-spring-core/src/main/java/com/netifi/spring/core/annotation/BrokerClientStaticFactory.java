@@ -49,7 +49,7 @@ public class BrokerClientStaticFactory {
   /**
    * Creates an instance of the correct Netifi Broker client for injection into a annotated field.
    *
-   * @return an instance of a {@link com.netifi.broker.BrokerClient} client
+   * @return an instance of a {@link com.netifi.broker.BrokerService} client
    */
   public static Object getBeanInstance(
       final DefaultListableBeanFactory beanFactory,
@@ -234,7 +234,7 @@ public class BrokerClientStaticFactory {
   }
 
   static <T> T createBrokerClient(
-      com.netifi.broker.BrokerClient brokerClient,
+      com.netifi.broker.BrokerService brokerClient,
       BrokerClient.Type routeType,
       String group,
       String destination,
@@ -272,7 +272,7 @@ public class BrokerClientStaticFactory {
   }
 
   public static BrokerSocket createBrokerRSocket(
-      com.netifi.broker.BrokerClient brokerClient,
+      com.netifi.broker.BrokerService brokerClient,
       BrokerClient.Type routeType,
       String group,
       String destination,
@@ -281,14 +281,14 @@ public class BrokerClientStaticFactory {
 
     switch (routeType) {
       case BROADCAST:
-        brokerSocket = brokerClient.broadcastServiceSocket(group, tags);
+        brokerSocket = brokerClient.broadcast(group, tags);
         break;
       case GROUP:
-        brokerSocket = brokerClient.groupServiceSocket(group, tags);
+        brokerSocket = brokerClient.group(group, tags);
         break;
       case DESTINATION:
         brokerSocket =
-            brokerClient.groupServiceSocket(
+            brokerClient.group(
                 group,
                 StringUtils.isEmpty(destination)
                     ? tags

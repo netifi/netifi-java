@@ -204,12 +204,12 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
   private static ResolvableType resolveResolvableType(BeanDefinition beanDefinition) {
 
     if (beanDefinition instanceof RootBeanDefinition) {
-      return ((RootBeanDefinition) beanDefinition).getResolvableType();
+      return ResolvableType.forClass(((RootBeanDefinition) beanDefinition).getTargetType());
     } else if (beanDefinition instanceof GenericBeanDefinition) {
       return ResolvableType.forClass(((GenericBeanDefinition) beanDefinition).getBeanClass());
+    } else {
+      return beanDefinition.getResolvableType();
     }
-
-    throw new IllegalArgumentException("Impossible to resolve bean type");
   }
 
   private static boolean findRealImplementationAndMarkAsPrimary(

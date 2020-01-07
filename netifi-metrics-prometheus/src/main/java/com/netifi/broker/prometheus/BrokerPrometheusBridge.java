@@ -15,16 +15,28 @@
  */
 package com.netifi.broker.prometheus;
 
-import com.netifi.broker.BrokerClient;
-import io.micrometer.core.instrument.*;
+import com.netifi.broker.BrokerFactory;
+import com.netifi.broker.RoutingBrokerService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.prometheus.client.exporter.common.TextFormat;
-import io.rsocket.rpc.metrics.om.*;
+import io.rsocket.rpc.metrics.om.MeterId;
+import io.rsocket.rpc.metrics.om.MeterMeasurement;
+import io.rsocket.rpc.metrics.om.MeterTag;
+import io.rsocket.rpc.metrics.om.MeterType;
+import io.rsocket.rpc.metrics.om.MetricsSnapshot;
+import io.rsocket.rpc.metrics.om.MetricsSnapshotHandler;
+import io.rsocket.rpc.metrics.om.MetricsSnapshotHandlerServer;
+import io.rsocket.rpc.metrics.om.Skew;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -86,18 +98,16 @@ public class BrokerPrometheusBridge implements MetricsSnapshotHandler {
     logger.info("broker port - {}", brokerPort);
     logger.info("access key - {}", accessKey);
 
-    BrokerClient brokerClient =
-        BrokerClient.tcp()
-            .accessKey(accessKey)
-            .accessToken(accessToken)
-            .group(group)
-            .host(brokerHost)
-            .port(brokerPort)
-            .destination("standalonePrometheusBridge")
-            .build();
+    RoutingBrokerService brokerClient =
+        BrokerFactory.connect()
+            .connection(spec -> spec.tcp())
+            .authentication(spec -> spec.simple().key(accessKey).token(accessToken))
+            .destinationInfo(
+                spec -> spec.groupName(group).destinationTag("standalonePrometheusBridge"))
+            .discoveryStrategy(spec -> spec.simple(brokerPort, brokerHost))
+            .toRoutingService();
 
-    brokerClient.addService(
-        new MetricsSnapshotHandlerServer(
+    new MetricsSnapshotHandlerServer(
             new BrokerPrometheusBridge(
                 Optional.empty(),
                 new PrometheusMeterRegistry(PrometheusConfig.DEFAULT),
@@ -106,7 +116,8 @@ public class BrokerPrometheusBridge implements MetricsSnapshotHandler {
                 Optional.ofNullable(metricsUrl)),
             Optional.empty(),
             Optional.empty(),
-            Optional.empty()));
+            Optional.empty())
+        .selfRegister(brokerClient.router());
 
     brokerClient.onClose().block();
   }

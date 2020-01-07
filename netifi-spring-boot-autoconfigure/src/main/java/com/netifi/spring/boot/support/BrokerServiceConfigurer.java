@@ -15,16 +15,10 @@
  */
 package com.netifi.spring.boot.support;
 
-import com.netifi.broker.BrokerClient;
 import com.netifi.broker.BrokerFactory;
 
 @FunctionalInterface
-@Deprecated
-public interface BrokerClientConfigurer extends BrokerServiceConfigurer {
+public interface BrokerServiceConfigurer {
 
-  BrokerClient.CustomizableBuilder configure(BrokerClient.CustomizableBuilder builder);
-
-  default void configure(BrokerFactory.ClientBuilder builder) {
-    // FIXME
-  }
+  void configure(BrokerFactory.ClientBuilder builder);
 }

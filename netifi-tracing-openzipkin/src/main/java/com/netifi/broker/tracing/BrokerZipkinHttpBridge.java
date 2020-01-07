@@ -16,7 +16,8 @@
 package com.netifi.broker.tracing;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.netifi.broker.BrokerClient;
+import com.netifi.broker.BrokerFactory;
+import com.netifi.broker.RoutingBrokerService;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelOption;
 import java.time.Duration;
@@ -75,22 +76,20 @@ public class BrokerZipkinHttpBridge implements BrokerTracingService {
     logger.info("zipkin spans url - {}", zipkinSpansUrl);
     logger.info("access key - {}", accessKey);
 
-    BrokerClient brokerClient =
-        BrokerClient.tcp()
-            .accessKey(accessKey)
-            .accessToken(accessToken)
-            .group(group)
-            .host(brokerHost)
-            .port(brokerPort)
-            .destination("standaloneZipkinBridge")
-            .build();
+    RoutingBrokerService brokerClient =
+        BrokerFactory.connect()
+            .authentication(spec -> spec.simple().key(accessKey).token(accessToken))
+            .connection(spec -> spec.tcp())
+            .destinationInfo(spec -> spec.groupName(group).destinationTag("standaloneZipkinBridge"))
+            .discoveryStrategy(spec -> spec.simple(brokerPort, brokerHost))
+            .toRoutingService();
 
-    brokerClient.addService(
-        new BrokerTracingServiceServer(
+    new BrokerTracingServiceServer(
             new BrokerZipkinHttpBridge(zipkinHost, zipkinPort, zipkinSpansUrl),
             Optional.empty(),
             Optional.empty(),
-            Optional.empty()));
+            Optional.empty())
+        .selfRegister(brokerClient.router());
 
     brokerClient.onClose().block();
   }

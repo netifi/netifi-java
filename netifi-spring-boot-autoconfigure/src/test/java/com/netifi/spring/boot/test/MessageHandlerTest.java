@@ -22,10 +22,10 @@ import reactor.core.publisher.Mono;
 
 @Controller
 @MessageMapping("test")
-public class MessageHandler {
+public class MessageHandlerTest {
 
   @MessageMapping("process")
   public Mono<String> process(@Payload Mono<String> data) {
-    return Mono.just("Echo: " + data);
+    return data.map(m -> "Echo: " + m);
   }
 }

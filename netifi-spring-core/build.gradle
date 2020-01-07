@@ -4,14 +4,6 @@ plugins {
 
 description = 'Netifi Spring Core'
 
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootDependenciesVersion}"
-        mavenBom "io.netty:netty-bom:${nettyVersion}"
-        mavenBom "io.projectreactor:reactor-bom:${reactorBomVersion}"
-    }
-}
-
 dependencies {
     compile project(':netifi-common')
     compile project(':netifi-broker-client')

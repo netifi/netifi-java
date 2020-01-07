@@ -15,14 +15,8 @@
  */
 package com.netifi.spring.boot.test;
 
-import java.util.Map;
-
-import io.rsocket.Payload;
-import io.rsocket.ipc.util.IPCChannelFunction;
-import io.rsocket.ipc.util.IPCFunction;
+import io.rsocket.ipc.MutableRouter;
 import io.rsocket.rpc.AbstractRSocketService;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 @javax.annotation.Generated(
     value = "by RSocket RPC proto compiler (version 0.2.2)",
@@ -39,10 +33,5 @@ public class TestIdlServiceServer extends AbstractRSocketService {
   }
 
   @Override
-  public void selfRegister(Map<String, IPCFunction<Mono<Void>>> fireAndForgetRegistry,
-          Map<String, IPCFunction<Mono<Payload>>> requestResponseRegistry,
-          Map<String, IPCFunction<Flux<Payload>>> requestStreamRegistry,
-          Map<String, IPCChannelFunction> requestChannelRegistry) {
-
-  }
+  public void selfRegister(MutableRouter router) {}
 }

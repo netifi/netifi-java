@@ -16,34 +16,34 @@
 
 package com.netifi.spring.boot;
 
-import com.netifi.broker.BrokerClient;
+import com.netifi.broker.BrokerService;
 import com.netifi.spring.messaging.BrokerClientRequesterMethodArgumentResolver;
 import com.netifi.spring.messaging.MessagingRSocketRequesterClientFactory;
+import com.netifi.spring.messaging.MessagingRouter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
 import io.opentracing.Tracer;
 import io.rsocket.AbstractRSocket;
-import io.rsocket.ConnectionSetupPayload;
 import io.rsocket.RSocket;
 import io.rsocket.RSocketFactory;
-import io.rsocket.frame.SetupFrameFlyweight;
+import io.rsocket.ipc.MutableRouter;
 import io.rsocket.transport.netty.server.TcpServerTransport;
-import java.time.Duration;
 import java.util.Optional;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.rsocket.RSocketProperties;
 import org.springframework.boot.autoconfigure.rsocket.RSocketStrategiesAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.rsocket.context.RSocketServerBootstrap;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.rsocket.MessageHandlerAcceptor;
 import org.springframework.messaging.rsocket.RSocketRequester;
-import org.springframework.messaging.rsocket.RSocketRequesterMethodArgumentResolver;
 import org.springframework.messaging.rsocket.RSocketStrategies;
+import org.springframework.messaging.rsocket.annotation.support.RSocketMessageHandler;
+import org.springframework.messaging.rsocket.annotation.support.RSocketRequesterMethodArgumentResolver;
+import org.springframework.util.MimeTypeUtils;
 
 /**
  * {@link EnableAutoConfiguration Auto-configuration} for Spring RSocket support in Spring
@@ -61,62 +61,60 @@ public class BrokerClientMessagingAutoConfiguration {
   private static final RSocket STUB_RSOCKET = new AbstractRSocket() {};
 
   @Bean
-  @ConditionalOnMissingBean
-  public MessageHandlerAcceptor messageHandlerAcceptor(
+  public MutableRouter messagingCustomizer(
+      RSocketProperties rSocketProperties,
       BrokerClientProperties brokerClientProperties,
       BrokerClientMessagingProperties properties,
       DefaultListableBeanFactory factory,
       RSocketStrategies rSocketStrategies,
-      BrokerClient brokerClient) {
-    BrokerClientProperties.KeepAliveProperties keepalive = brokerClientProperties.getKeepalive();
-    Duration tickPeriod = Duration.ofSeconds(keepalive.getTickPeriodSeconds());
-    Duration ackTimeout = Duration.ofSeconds(keepalive.getAckTimeoutSeconds());
-    int missedAcks = keepalive.getMissedAcks();
+      RSocketMessageHandler handler) {
+    return new MessagingRouter(
+        MimeTypeUtils.ALL,
+        MimeTypeUtils.ALL,
+        rSocketStrategies.metadataExtractor(),
+        handler,
+        rSocketStrategies.routeMatcher(),
+        rSocketStrategies);
+  }
 
-    ConnectionSetupPayload connectionSetupPayload =
-        // FIXME: hardcoded mime for responder
-        ConnectionSetupPayload.create(
-            SetupFrameFlyweight.encode(
-                ByteBufAllocator.DEFAULT,
-                false,
-                (int) tickPeriod.toMillis(),
-                (int) (ackTimeout.toMillis() + tickPeriod.toMillis() * missedAcks),
-                Unpooled.EMPTY_BUFFER,
-                "text/plain",
-                "text/plain",
-                Unpooled.EMPTY_BUFFER,
-                Unpooled.EMPTY_BUFFER));
-    MessageHandlerAcceptor acceptor = new MessageHandlerAcceptor();
-    acceptor.setRSocketStrategies(rSocketStrategies);
-    acceptor
+  @Bean
+  @ConditionalOnMissingBean
+  public RSocketServerBootstrap messageHandlerAcceptor(
+      BrokerClientMessagingProperties properties,
+      DefaultListableBeanFactory factory,
+      RSocketStrategies rSocketStrategies,
+      RSocketMessageHandler handler,
+      BrokerService brokerClient,
+      Optional<MeterRegistry> registry,
+      Optional<Tracer> tracer) {
+    RSocketServerBootstrap bootstrap = new NetifiBootstrap(brokerClient);
+
+    handler
         .getArgumentResolverConfigurer()
         .getCustomResolvers()
         .removeIf(r -> r instanceof RSocketRequesterMethodArgumentResolver);
 
-    acceptor
+    handler
         .getArgumentResolverConfigurer()
         .addCustomResolver(
             new BrokerClientRequesterMethodArgumentResolver(
-                properties.getName(), brokerClient, factory, rSocketStrategies));
+                brokerClient,
+                factory,
+                rSocketStrategies,
+                registry.orElse(null),
+                tracer.orElse(null)));
 
-    brokerClient.addNamedRSocket(
-        properties.getName(), acceptor.apply(connectionSetupPayload, STUB_RSOCKET));
-
-    return acceptor;
+    return bootstrap;
   }
 
   @Bean
   public MessagingRSocketRequesterClientFactory messagingRSocketRequesterClientFactory(
       BrokerClientMessagingProperties properties,
-      BrokerClient brokerClient,
+      BrokerService brokerClient,
       RSocketStrategies rSocketStrategies,
       Optional<MeterRegistry> registry,
       Optional<Tracer> tracer) {
     return new MessagingRSocketRequesterClientFactory(
-        properties.getName(),
-        brokerClient,
-        registry.orElse(null),
-        tracer.orElse(null),
-        rSocketStrategies);
+        brokerClient, registry.orElse(null), tracer.orElse(null), rSocketStrategies);
   }
 }

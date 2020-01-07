@@ -13,18 +13,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.netifi.spring.boot.support;
 
-import com.netifi.broker.BrokerClient;
-import com.netifi.broker.BrokerFactory;
+package com.netifi.broker;
 
-@FunctionalInterface
-@Deprecated
-public interface BrokerClientConfigurer extends BrokerServiceConfigurer {
+import com.netifi.common.tags.Tags;
 
-  BrokerClient.CustomizableBuilder configure(BrokerClient.CustomizableBuilder builder);
+public interface InstanceInfoAware {
 
-  default void configure(BrokerFactory.ClientBuilder builder) {
-    // FIXME
-  }
+  String groupName();
+
+  Tags tags();
+
+  long accessKey();
 }

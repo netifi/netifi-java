@@ -10,6 +10,10 @@
 //    }
 //}
 
+plugins {
+  id 'com.gradle.enterprise' version '3.1'
+}
+
 rootProject.name = 'netifi-java'
 
 include 'netifi-bom'
@@ -30,3 +34,10 @@ include 'netifi-spring-core'
 include 'netifi-spring-messaging'
 include 'netifi-spring-boot-starter'
 include 'netifi-spring-boot-autoconfigure'
+
+gradleEnterprise {
+  buildScan {
+	termsOfServiceUrl = 'https://gradle.com/terms-of-service'
+	termsOfServiceAgree = 'yes'
+  }
+}

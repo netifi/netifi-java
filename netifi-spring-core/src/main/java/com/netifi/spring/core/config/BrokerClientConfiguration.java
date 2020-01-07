@@ -15,7 +15,8 @@
  */
 package com.netifi.spring.core.config;
 
-import com.netifi.broker.BrokerClient;
+import com.netifi.broker.BrokerService;
+import com.netifi.broker.RoutingBrokerService;
 import com.netifi.broker.info.BrokerInfoService;
 import com.netifi.broker.info.BrokerInfoServiceClient;
 import com.netifi.broker.info.BrokerInfoServiceServer;
@@ -36,16 +37,15 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 
 @Configuration
 public class BrokerClientConfiguration implements ApplicationContextAware {
 
   @Bean
   public RpcBrokerClientFactorySupport rpcBrokerClientFactorySupport(
-      BrokerClient brokerClient, Optional<MeterRegistry> registry, Optional<Tracer> tracer) {
+      BrokerService brokerService, Optional<MeterRegistry> registry, Optional<Tracer> tracer) {
     return new RpcBrokerClientFactorySupport(
-        brokerClient, registry.orElse(null), tracer.orElse(null));
+        brokerService, registry.orElse(null), tracer.orElse(null));
   }
 
   @Bean(name = "internalBrokerClientBeanDefinitionRegistryPostProcessor")
@@ -56,7 +56,7 @@ public class BrokerClientConfiguration implements ApplicationContextAware {
 
   @Bean
   public BrokerClientApplicationEventListener brokerClientApplicationEventListener(
-      BrokerClient brokerClient) {
+      RoutingBrokerService brokerClient) {
     return new BrokerClientApplicationEventListener(brokerClient);
   }
 

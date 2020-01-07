@@ -16,14 +16,14 @@
 package com.netifi.broker.integration;
 
 import com.google.protobuf.Empty;
-import com.netifi.broker.BrokerClient;
+import com.netifi.broker.BrokerFactory;
+import com.netifi.broker.RoutingBrokerService;
 import com.netifi.broker.rsocket.BrokerSocket;
 import com.netifi.broker.testing.protobuf.SimpleRequest;
 import com.netifi.broker.testing.protobuf.SimpleResponse;
 import com.netifi.broker.testing.protobuf.SimpleService;
 import com.netifi.broker.testing.protobuf.SimpleServiceClient;
 import com.netifi.broker.testing.protobuf.SimpleServiceServer;
-import com.netifi.common.tags.Tags;
 import io.netty.buffer.ByteBuf;
 import java.time.Duration;
 import java.util.Optional;
@@ -48,39 +48,36 @@ public class BrokerClientIntegrationTest {
   private static final String host = "localhost";
   private static final int port = 8001;
   private static final int server_port = 8001;
-  private static BrokerClient server;
-  private static BrokerClient brokerClient;
+  private static RoutingBrokerService server;
+  private static RoutingBrokerService brokerClient;
   private static BrokerSocket brokerSocket;
 
   @BeforeClass
   public static void setup() {
     server =
-        BrokerClient.tcp()
-            .keepalive(false)
-            .group("test.server")
-            .destination("server")
-            .accessKey(accessKey)
-            .accessToken(accessToken)
-            .host(host)
-            .port(server_port)
-            .build();
+        BrokerFactory.connect()
+            .destinationInfo(spec -> spec.groupName("test.server").destinationTag("server"))
+            .keepAlive(spec -> spec.noKeepAlive())
+            .authentication(spec -> spec.simple().key(accessKey).token(accessToken))
+            .connection(spec -> spec.tcp())
+            .discoveryStrategy(spec -> spec.simple(port, host))
+            .toRoutingService();
 
     brokerClient =
-        BrokerClient.tcp()
-            .keepalive(false)
-            .group("test.brokerClient")
-            .destination("brokerClient")
-            .accessKey(accessKey)
-            .accessToken(accessToken)
-            .host(host)
-            .port(port)
-            .build();
+        BrokerFactory.connect()
+            .keepAlive(spec -> spec.noKeepAlive())
+            .connection(spec -> spec.tcp())
+            .destinationInfo(
+                spec -> spec.groupName("test.brokerClient").destinationTag("brokerClient"))
+            .authentication(spec -> spec.simple().key(accessKey).token(accessToken))
+            .discoveryStrategy(spec -> spec.simple(port, host))
+            .toRoutingService();
 
-    server.addService(
-        new SimpleServiceServer(
-            new DefaultSimpleService(), Optional.empty(), Optional.empty(), Optional.empty()));
+    new SimpleServiceServer(
+            new DefaultSimpleService(), Optional.empty(), Optional.empty(), Optional.empty())
+        .selfRegister(server.router());
 
-    brokerSocket = brokerClient.groupServiceSocket("test.server", Tags.empty());
+    brokerSocket = brokerClient.group("test.server");
   }
 
   @Test

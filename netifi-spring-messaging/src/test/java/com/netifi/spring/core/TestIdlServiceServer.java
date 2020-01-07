@@ -15,6 +15,7 @@
  */
 package com.netifi.spring.core;
 
+import io.rsocket.ipc.MutableRouter;
 import io.rsocket.rpc.AbstractRSocketService;
 
 @javax.annotation.Generated(
@@ -30,4 +31,7 @@ public class TestIdlServiceServer extends AbstractRSocketService {
   public Class<?> getServiceClass() {
     return TestIdl.class;
   }
+
+  @Override
+  public void selfRegister(MutableRouter router) {}
 }

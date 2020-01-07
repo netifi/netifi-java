@@ -16,6 +16,7 @@
 package com.netifi.spring.core;
 
 import com.netifi.broker.BrokerClient;
+import com.netifi.broker.RoutingBrokerService;
 import com.netifi.spring.core.config.EnableBrokerClient;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +30,12 @@ public class TestableConfiguration {
   public BrokerClient brokerClient() {
     return Mockito.mock(BrokerClient.class);
   }
+
+  @Bean
+  public RoutingBrokerService routingBrokerService() {
+    return Mockito.mock(RoutingBrokerService.class);
+  }
+
 
   @Bean
   public TestIdlImpl testIdlImpl() {

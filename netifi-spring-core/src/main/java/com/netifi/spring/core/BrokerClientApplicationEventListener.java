@@ -15,7 +15,7 @@
  */
 package com.netifi.spring.core;
 
-import com.netifi.broker.BrokerClient;
+import com.netifi.broker.RoutingBrokerService;
 import io.rsocket.rpc.RSocketRpcService;
 import java.util.Map;
 import org.springframework.context.ApplicationContext;
@@ -23,9 +23,9 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 
 public class BrokerClientApplicationEventListener {
-  private final BrokerClient brokerClient;
+  private final RoutingBrokerService brokerClient;
 
-  public BrokerClientApplicationEventListener(BrokerClient brokerClient) {
+  public BrokerClientApplicationEventListener(RoutingBrokerService brokerClient) {
     this.brokerClient = brokerClient;
   }
 
@@ -35,6 +35,6 @@ public class BrokerClientApplicationEventListener {
     Map<String, RSocketRpcService> rSocketServiceMap =
         context.getBeansOfType(RSocketRpcService.class);
 
-    rSocketServiceMap.values().forEach(brokerClient::addService);
+    rSocketServiceMap.values().forEach(s -> s.selfRegister(brokerClient.router()));
   }
 }

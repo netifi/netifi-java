@@ -16,7 +16,7 @@
 package com.netifi.broker.micrometer;
 
 import com.netflix.spectator.atlas.AtlasConfig;
-import com.netifi.broker.BrokerClient;
+import com.netifi.broker.BrokerService;
 import io.micrometer.atlas.AtlasMeterRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
@@ -37,13 +37,12 @@ public class BrokerMeterRegistrySupplier implements Supplier<MeterRegistry> {
 
   @Inject
   public BrokerMeterRegistrySupplier(
-      BrokerClient netifi,
+      BrokerService netifi,
       Optional<String> metricsGroup,
       Optional<Long> stepInMillis,
       Optional<Boolean> export) {
     Objects.requireNonNull(netifi, "must provide a BrokerClient instance");
-    BrokerSocket brokerSocket = netifi.groupServiceSocket(metricsGroup.orElse("com.netifi.broker.metrics"), com.netifi.common.tags.Tags
-        .empty());
+    BrokerSocket brokerSocket = netifi.group(metricsGroup.orElse("com.netifi.broker.metrics"));
 
     MetricsSnapshotHandlerClient client = new MetricsSnapshotHandlerClient(brokerSocket);
 
@@ -70,8 +69,7 @@ public class BrokerMeterRegistrySupplier implements Supplier<MeterRegistry> {
             });
 
     List<Tag> tags =
-        netifi
-            .getTags()
+            netifi.tags()
             .stream()
             .map(tag -> Tag.of(tag.getKey(), tag.getValue()))
             .collect(Collectors.toList());
@@ -79,8 +77,8 @@ public class BrokerMeterRegistrySupplier implements Supplier<MeterRegistry> {
         .config()
         .commonTags(
             Tags.of(
-                    "accessKey", String.valueOf(netifi.getAccesskey()),
-                    "group", netifi.getGroupName())
+                    "accessKey", String.valueOf(netifi.accessKey()),
+                    "group", netifi.groupName())
                 .and(tags));
 
     new BrokerOperatingSystemMetrics(registry, Collections.EMPTY_LIST);

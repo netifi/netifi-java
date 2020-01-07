@@ -15,8 +15,6 @@
  */
 package com.netifi.spring.boot;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -26,15 +24,4 @@ import org.springframework.validation.annotation.Validated;
  */
 @ConfigurationProperties("netifi.client.messaging")
 @Validated
-public class BrokerClientMessagingProperties {
-
-  @NotEmpty @NotNull private String name = "spring-messaging";
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-}
+public class BrokerClientMessagingProperties {}

@@ -29,7 +29,7 @@ import org.testcontainers.containers.GenericContainer;
 public class SpringMessagingIntegrationTest {
 
   public static GenericContainer redis =
-      new GenericContainer("netifi/broker:1.6.4")
+      new GenericContainer("netifi/broker:1.6.10")
           .withExposedPorts(8001, 7001, 6001, 8101)
           .withEnv(
               "BROKER_SERVER_OPTS",
@@ -50,7 +50,8 @@ public class SpringMessagingIntegrationTest {
   @Test
   public void tests() {
     Assert.assertNotNull(requester.rsocket());
-
-    requester.route("test.process").data("test").retrieveMono(String.class).log().block();
+    Assert.assertEquals(
+        "Echo: test",
+        requester.route("test.process").data("test").retrieveMono(String.class).log().block());
   }
 }

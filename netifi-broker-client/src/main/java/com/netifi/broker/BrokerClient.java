@@ -21,6 +21,7 @@ import com.netifi.broker.info.Broker;
 import com.netifi.broker.rsocket.BrokerSocket;
 import com.netifi.broker.rsocket.NamedRSocketClientWrapper;
 import com.netifi.broker.rsocket.transport.BrokerAddressSelectors;
+import com.netifi.common.net.HostAndPort;
 import com.netifi.common.tags.Tag;
 import com.netifi.common.tags.Tags;
 import io.netty.buffer.ByteBuf;
@@ -33,8 +34,10 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.opentracing.Tracer;
 import io.rsocket.Closeable;
 import io.rsocket.RSocket;
-import io.rsocket.rpc.RSocketRpcService;
-import io.rsocket.rpc.rsocket.RequestHandlingRSocket;
+import io.rsocket.ipc.MutableRouter;
+import io.rsocket.ipc.RoutingServerRSocket;
+import io.rsocket.ipc.SelfRegistrable;
+import io.rsocket.ipc.routing.SimpleRouter;
 import io.rsocket.transport.ClientTransport;
 import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.transport.netty.client.WebsocketClientTransport;
@@ -43,11 +46,13 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.Exceptions;
@@ -56,6 +61,7 @@ import reactor.core.publisher.MonoProcessor;
 import reactor.netty.tcp.TcpClient;
 
 /** This is where the magic happens */
+@Deprecated
 public class BrokerClient implements Closeable {
   private static final Logger logger = LoggerFactory.getLogger(BrokerClient.class);
   private static final ConcurrentHashMap<String, BrokerClient> BROKERCLIENT =
@@ -71,9 +77,27 @@ public class BrokerClient implements Closeable {
   private final String group;
   private final String destination;
   private final Tags tags;
-  private final BrokerService brokerService;
-  private MonoProcessor<Void> onClose;
-  private RequestHandlingRSocket requestHandlingRSocket;
+  private final RoutingBrokerService brokerService;
+  private final Mono<Void> onClose;
+  private final MutableRouter router;
+  private RoutingServerRSocket routingServerRSocket;
+
+  private BrokerClient(RoutingBrokerService routingBrokerService) {
+    brokerService = routingBrokerService;
+    tags = routingBrokerService.tags();
+    destination =
+        routingBrokerService
+            .tags()
+            .stream()
+            .filter(tag -> tag.getKey().equals("com" + ".netifi.destination"))
+            .findFirst()
+            .map(Tag::getValue)
+            .orElse(null);
+    group = routingBrokerService.groupName();
+    accesskey = routingBrokerService.accessKey();
+    onClose = routingBrokerService.onClose();
+    router = routingBrokerService.router();
+  }
 
   private BrokerClient(
       long accessKey,
@@ -88,10 +112,11 @@ public class BrokerClient implements Closeable {
       long tickPeriodSeconds,
       long ackTimeoutSeconds,
       int missedAcks,
-      List<SocketAddress> seedAddresses,
+      List<InetSocketAddress> seedAddresses,
       Function<Broker, InetSocketAddress> addressSelector,
       Function<SocketAddress, ClientTransport> clientTransportFactory,
-      RequestHandlingRSocket responder,
+      MutableRouter router,
+      RoutingServerRSocket responder,
       boolean responderRequiresUnwrapping,
       int poolSize,
       Supplier<Tracer> tracerSupplier,
@@ -101,28 +126,41 @@ public class BrokerClient implements Closeable {
     this.destination = destination;
     this.tags = tags;
     this.onClose = MonoProcessor.create();
-    this.requestHandlingRSocket = responder;
+    this.router = router;
+    this.routingServerRSocket = responder;
+
+    if (discoveryStrategy == null) {
+      discoveryStrategy =
+          () ->
+              Mono.just(
+                  seedAddresses
+                      .stream()
+                      .map(isa -> HostAndPort.fromParts(isa.getHostName(), isa.getPort()))
+                      .collect(Collectors.toList()));
+    }
+
     this.brokerService =
-        new DefaultBrokerService(
-            seedAddresses,
-            requestHandlingRSocket,
-            responderRequiresUnwrapping,
-            inetAddress,
-            group,
-            addressSelector,
-            clientTransportFactory,
-            poolSize,
-            keepalive,
-            tickPeriodSeconds,
-            ackTimeoutSeconds,
-            missedAcks,
-            accessKey,
-            accessToken,
-            connectionIdSeed,
-            additionalFlags,
-            tags,
-            tracerSupplier.get(),
-            discoveryStrategy);
+        new DefaultRoutingBrokerService(
+            router,
+            new DefaultBrokerService(
+                routingServerRSocket,
+                responderRequiresUnwrapping,
+                inetAddress,
+                group,
+                tags,
+                connectionIdSeed,
+                addressSelector,
+                clientTransportFactory,
+                discoveryStrategy,
+                keepalive,
+                Duration.ofSeconds(tickPeriodSeconds),
+                Duration.ofSeconds(ackTimeoutSeconds),
+                missedAcks,
+                accessKey,
+                accessToken,
+                additionalFlags,
+                poolSize,
+                tracerSupplier.get()));
   }
 
   public String getGroup() {
@@ -150,19 +188,23 @@ public class BrokerClient implements Closeable {
     return new CustomizableBuilder();
   }
 
+  public static <SELF extends RoutingBrokerService<SELF>> BrokerClient from(
+      RoutingBrokerService<SELF> routingBrokerService) {
+    return new BrokerClient(routingBrokerService);
+  }
+
   private static String defaultDestination() {
     return UUID.randomUUID().toString();
   }
 
   @Override
   public void dispose() {
-    requestHandlingRSocket.dispose();
-    onClose.onComplete();
+    routingServerRSocket.dispose();
   }
 
   @Override
   public boolean isDisposed() {
-    return onClose.isTerminated();
+    return routingServerRSocket.isDisposed();
   }
 
   @Override
@@ -176,9 +218,9 @@ public class BrokerClient implements Closeable {
    * @param service the RSocketRpcService instance
    * @return current BrokerClient builder instance
    */
-  public BrokerClient addService(RSocketRpcService service) {
+  public BrokerClient addService(SelfRegistrable service) {
     Objects.requireNonNull(service);
-    requestHandlingRSocket.addService(service);
+    service.selfRegister(router);
     return this;
   }
 
@@ -318,11 +360,12 @@ public class BrokerClient implements Closeable {
     InetAddress inetAddress = DefaultBuilderConfig.getLocalAddress();
     String host = DefaultBuilderConfig.getHost();
     Integer port = DefaultBuilderConfig.getPort();
-    List<SocketAddress> seedAddresses = DefaultBuilderConfig.getSeedAddress();
+    List<InetSocketAddress> seedAddresses = DefaultBuilderConfig.getSeedAddress();
     String netifiKey;
-    List<SocketAddress> socketAddresses;
+    List<InetSocketAddress> socketAddresses;
     DiscoveryStrategy discoveryStrategy = null;
-    RequestHandlingRSocket responder = new RequestHandlingRSocket(); // DEFAULT
+    MutableRouter router = new SimpleRouter(); // DEFAULT
+    Function<MutableRouter, RoutingServerRSocket> responderBuilder = RoutingServerRSocket::new;
     boolean responderRequiresUnwrapping = true; // DEFAULT
 
     public SELF discoveryStrategy(DiscoveryStrategy discoveryStrategy) {
@@ -433,11 +476,8 @@ public class BrokerClient implements Closeable {
     }
 
     public SELF seedAddresses(Collection<SocketAddress> addresses) {
-      if (addresses instanceof List) {
-        this.seedAddresses = (List<SocketAddress>) addresses;
-      } else {
-        this.seedAddresses = new ArrayList<>(addresses);
-      }
+      this.seedAddresses =
+          addresses.stream().map(sa -> (InetSocketAddress) sa).collect(Collectors.toList());
 
       return (SELF) this;
     }
@@ -486,8 +526,14 @@ public class BrokerClient implements Closeable {
       return (SELF) this;
     }
 
-    public SELF requestHandler(RequestHandlingRSocket responder, boolean requiresUnwrapping) {
-      this.responder = responder;
+    public SELF router(MutableRouter router) {
+      this.router = router;
+      return (SELF) this;
+    }
+
+    public SELF requestHandler(
+        Function<MutableRouter, RoutingServerRSocket> responder, boolean requiresUnwrapping) {
+      this.responderBuilder = responder;
       this.responderRequiresUnwrapping = requiresUnwrapping;
       return (SELF) this;
     }
@@ -635,7 +681,8 @@ public class BrokerClient implements Closeable {
                     socketAddresses,
                     BrokerAddressSelectors.WEBSOCKET_ADDRESS,
                     clientTransportFactory,
-                    responder,
+                    router,
+                    responderBuilder.apply(router),
                     responderRequiresUnwrapping,
                     poolSize,
                     tracerSupplier,
@@ -728,7 +775,8 @@ public class BrokerClient implements Closeable {
                     socketAddresses,
                     BrokerAddressSelectors.TCP_ADDRESS,
                     clientTransportFactory,
-                    responder,
+                    router,
+                    responderBuilder.apply(router),
                     responderRequiresUnwrapping,
                     poolSize,
                     tracerSupplier,
@@ -779,7 +827,8 @@ public class BrokerClient implements Closeable {
                     socketAddresses,
                     addressSelector,
                     clientTransportFactory,
-                    responder,
+                    router,
+                    responderBuilder.apply(router),
                     responderRequiresUnwrapping,
                     poolSize,
                     tracerSupplier,
@@ -796,7 +845,7 @@ public class BrokerClient implements Closeable {
     private InetAddress inetAddress = DefaultBuilderConfig.getLocalAddress();
     private String host = DefaultBuilderConfig.getHost();
     private Integer port = DefaultBuilderConfig.getPort();
-    private List<SocketAddress> seedAddresses = DefaultBuilderConfig.getSeedAddress();
+    private List<InetSocketAddress> seedAddresses = DefaultBuilderConfig.getSeedAddress();
     private Long accessKey = DefaultBuilderConfig.getAccessKey();
     private String group = DefaultBuilderConfig.getGroup();
     private String destination = DefaultBuilderConfig.getDestination();
@@ -904,11 +953,8 @@ public class BrokerClient implements Closeable {
     }
 
     public Builder seedAddresses(Collection<SocketAddress> addresses) {
-      if (addresses instanceof List) {
-        this.seedAddresses = (List<SocketAddress>) addresses;
-      } else {
-        this.seedAddresses = new ArrayList<>(addresses);
-      }
+      this.seedAddresses =
+          addresses.stream().map(sa -> (InetSocketAddress) sa).collect(Collectors.toList());
 
       return this;
     }
@@ -1090,7 +1136,7 @@ public class BrokerClient implements Closeable {
         }
       }
 
-      List<SocketAddress> socketAddresses = null;
+      List<InetSocketAddress> socketAddresses = null;
       if (discoveryStrategy == null) {
         if (seedAddresses == null) {
           Objects.requireNonNull(host, "host is required");
@@ -1106,10 +1152,11 @@ public class BrokerClient implements Closeable {
 
       String netifiKey = accessKey + group;
 
-      List<SocketAddress> _s = socketAddresses;
+      List<InetSocketAddress> _s = socketAddresses;
       return BROKERCLIENT.computeIfAbsent(
           netifiKey,
           _k -> {
+            SimpleRouter router = new SimpleRouter();
             BrokerClient brokerClient =
                 new BrokerClient(
                     accessKey,
@@ -1127,7 +1174,8 @@ public class BrokerClient implements Closeable {
                     _s,
                     addressSelector,
                     clientTransportFactory,
-                    new RequestHandlingRSocket(),
+                    router,
+                    new RoutingServerRSocket(router),
                     true,
                     poolSize,
                     tracerSupplier,

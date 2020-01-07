@@ -4,12 +4,6 @@ plugins {
 
 description = 'Netifi Spring Boot Autoconfigure'
 
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootDependenciesVersion}"
-    }
-}
-
 dependencies {
     compile project(':netifi-spring-core')
     compile project(':netifi-spring-messaging')

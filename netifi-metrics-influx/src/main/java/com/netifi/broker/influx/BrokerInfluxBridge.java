@@ -16,13 +16,25 @@
 package com.netifi.broker.influx;
 
 import com.google.common.util.concurrent.AtomicDouble;
-import com.netifi.broker.BrokerClient;
-import io.micrometer.core.instrument.*;
+import com.netifi.broker.BrokerFactory;
+import com.netifi.broker.RoutingBrokerService;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Timer;
 import io.micrometer.influx.InfluxConfig;
 import io.micrometer.influx.InfluxMeterRegistry;
 import io.netty.buffer.ByteBuf;
-import io.rsocket.rpc.metrics.om.*;
+import io.rsocket.rpc.metrics.om.MeterId;
+import io.rsocket.rpc.metrics.om.MeterMeasurement;
+import io.rsocket.rpc.metrics.om.MeterTag;
+import io.rsocket.rpc.metrics.om.MeterType;
+import io.rsocket.rpc.metrics.om.MetricsSnapshot;
+import io.rsocket.rpc.metrics.om.MetricsSnapshotHandler;
+import io.rsocket.rpc.metrics.om.MetricsSnapshotHandlerServer;
+import io.rsocket.rpc.metrics.om.Skew;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -73,15 +85,13 @@ public class BrokerInfluxBridge implements MetricsSnapshotHandler {
     logger.info("broker port - {}", brokerPort);
     logger.info("access key - {}", accessKey);
 
-    BrokerClient brokerClient =
-        BrokerClient.tcp()
-            .accessKey(accessKey)
-            .accessToken(accessToken)
-            .group(group)
-            .host(brokerHost)
-            .port(brokerPort)
-            .destination("standaloneInfluxBridge")
-            .build();
+    RoutingBrokerService brokerClient =
+        BrokerFactory.connect()
+            .connection(spec -> spec.tcp())
+            .authentication(spec -> spec.simple().key(accessKey).token(accessToken))
+            .destinationInfo(spec -> spec.groupName(group).destinationTag("standaloneInfluxBridge"))
+            .discoveryStrategy(spec -> spec.simple(brokerPort, brokerHost))
+            .toRoutingService();
 
     InfluxConfig config =
         new InfluxConfig() {
@@ -116,8 +126,7 @@ public class BrokerInfluxBridge implements MetricsSnapshotHandler {
         };
 
     AtomicLong influxThreadCount = new AtomicLong();
-    brokerClient.addService(
-        new MetricsSnapshotHandlerServer(
+    new MetricsSnapshotHandlerServer(
             new BrokerInfluxBridge(
                 Optional.empty(),
                 new InfluxMeterRegistry(
@@ -131,7 +140,8 @@ public class BrokerInfluxBridge implements MetricsSnapshotHandler {
                     })),
             Optional.empty(),
             Optional.empty(),
-            Optional.empty()));
+            Optional.empty())
+        .selfRegister(brokerClient.router());
 
     brokerClient.onClose().block();
   }
