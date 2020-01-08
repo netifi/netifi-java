@@ -571,11 +571,11 @@ public final class BrokerFactory {
 
       DestinationInfoConfig build() {
         Tags tags;
-        if (destination != null && !destination.isEmpty()) {
-          tags = this.tags.and("com.netifi.destination", destination);
-        } else {
-          tags = this.tags;
+        if (destination == null || destination.isEmpty()) {
+          destination = defaultDestination();
         }
+
+        tags = this.tags.and("com.netifi.destination", destination);
 
         return new DestinationInfoConfig() {
           @Override

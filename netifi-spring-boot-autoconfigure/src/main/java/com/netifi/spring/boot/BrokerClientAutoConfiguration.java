@@ -19,7 +19,12 @@ import com.netifi.broker.BrokerClient;
 import com.netifi.broker.BrokerFactory;
 import com.netifi.broker.BrokerService;
 import com.netifi.broker.RoutingBrokerService;
-import com.netifi.broker.discovery.*;
+import com.netifi.broker.discovery.ConsulDiscoveryConfig;
+import com.netifi.broker.discovery.DiscoveryStrategy;
+import com.netifi.broker.discovery.EC2TagsDiscoveryConfig;
+import com.netifi.broker.discovery.KubernetesDiscoveryConfig;
+import com.netifi.broker.discovery.StaticListDiscoveryConfig;
+import com.netifi.broker.discovery.StaticListDiscoveryStrategy;
 import com.netifi.broker.micrometer.BrokerMeterRegistrySupplier;
 import com.netifi.broker.tracing.BrokerTracerSupplier;
 import com.netifi.common.tags.Tag;
@@ -30,12 +35,9 @@ import com.netifi.spring.core.config.BrokerClientConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentracing.Tracer;
 import io.rsocket.ipc.MutableRouter;
-import io.rsocket.ipc.Router;
-import io.rsocket.ipc.routing.SimpleRouter;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -58,8 +60,8 @@ import org.springframework.util.StringUtils;
 @AutoConfigureBefore(BrokerClientConfiguration.class)
 public class BrokerClientAutoConfiguration {
 
-  static RoutingBrokerService configureBrokerClient(
-      MutableRouter router, List<? extends BrokerServiceConfigurer> configurers) {
+  static RoutingBrokerService<?> configureBrokerClient(
+      MutableRouter<?> router, List<? extends BrokerServiceConfigurer> configurers) {
     BrokerFactory.ClientBuilder clientBuilder = BrokerFactory.connect();
 
     AnnotationAwareOrderComparator.sort(configurers);
@@ -72,13 +74,14 @@ public class BrokerClientAutoConfiguration {
   }
 
   @Bean(name = "internalScanClassPathBeanDefinitionRegistryPostProcessor")
-  public BeanDefinitionRegistryPostProcessor scanClassPathBeanDefinitionRegistryPostProcessor() {
+  public ScanClassPathBeanDefinitionRegistryPostProcessor
+      scanClassPathBeanDefinitionRegistryPostProcessor() {
     return new ScanClassPathBeanDefinitionRegistryPostProcessor();
   }
 
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE)
-  public BrokerServiceConfigurer propertiesBasedBrokerClientConfigurer(
+  public BrokerServiceConfigurer propertiesBasedBrokerServiceConfigurer(
       BrokerClientTagSupplier brokerClientTagSupplier,
       BrokerClientProperties brokerClientProperties) {
     return builder -> {
@@ -228,15 +231,6 @@ public class BrokerClientAutoConfiguration {
   }
 
   @Configuration
-  @ConditionalOnMissingBean(Router.class)
-  public static class RouterConfiguration {
-    @Bean
-    public MutableRouter mutableRouter() {
-      return new SimpleRouter();
-    }
-  }
-
-  @Configuration
   @ConditionalOnMissingBean(MeterRegistry.class)
   @ConditionalOnClass(BrokerMeterRegistrySupplier.class)
   public static class MetricsConfigurations {
@@ -267,15 +261,15 @@ public class BrokerClientAutoConfiguration {
 
   @Configuration
   @ConditionalOnNotWebApplication
-  @ConditionalOnMissingBean({BrokerService.class})
+  @ConditionalOnMissingBean(BrokerService.class)
   public static class NonWebBrokerClientConfiguration {
 
     @Bean
-    public RoutingBrokerService routingBrokerService(
-        MutableRouter router,
+    public RoutingBrokerService<?> routingBrokerService(
+        MutableRouter<?> mutableRouter,
         List<? extends BrokerServiceConfigurer> configurers,
         ConfigurableApplicationContext context) {
-      RoutingBrokerService brokerClient = configureBrokerClient(router, configurers);
+      RoutingBrokerService<?> brokerClient = configureBrokerClient(mutableRouter, configurers);
 
       startDaemonAwaitThread(brokerClient);
 
@@ -306,24 +300,24 @@ public class BrokerClientAutoConfiguration {
     }
 
     @Bean
-    public BrokerClient routingBrokerService(RoutingBrokerService routingBrokerService) {
+    public BrokerClient brokerClient(RoutingBrokerService<?> routingBrokerService) {
       return BrokerClient.from(routingBrokerService);
     }
   }
 
   @Configuration
   @ConditionalOnWebApplication
-  @ConditionalOnMissingBean({BrokerService.class})
+  @ConditionalOnMissingBean(BrokerService.class)
   public static class WebBrokerClientConfiguration {
 
     @Bean
-    public RoutingBrokerService routingBrokerService(
-        MutableRouter router, List<? extends BrokerServiceConfigurer> configurers) {
+    public RoutingBrokerService<?> routingBrokerService(
+        MutableRouter<?> router, List<? extends BrokerServiceConfigurer> configurers) {
       return configureBrokerClient(router, configurers);
     }
 
     @Bean
-    public BrokerClient routingBrokerService(RoutingBrokerService routingBrokerService) {
+    public BrokerClient brokerClient(RoutingBrokerService<?> routingBrokerService) {
       return BrokerClient.from(routingBrokerService);
     }
   }

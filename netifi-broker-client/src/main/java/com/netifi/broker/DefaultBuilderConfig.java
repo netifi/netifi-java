@@ -28,8 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Gets current default configuration for {@link BrokerFactory}. Can be overridden with
- * System
+ * Gets current default configuration for {@link BrokerFactory}. Can be overridden with System
  * properties, or if the application provides a config file. The builder will over-ride these values
  * if they are based directly in to the builder. Otherwise it will these values a default.
  */

@@ -36,7 +36,6 @@ public class TestableConfiguration {
     return Mockito.mock(RoutingBrokerService.class);
   }
 
-
   @Bean
   public TestIdlImpl testIdlImpl() {
     return new TestIdlImpl();

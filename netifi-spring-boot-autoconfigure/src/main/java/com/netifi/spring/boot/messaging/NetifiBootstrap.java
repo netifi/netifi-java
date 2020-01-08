@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.netifi.spring.boot;
+package com.netifi.spring.boot.messaging;
 
 import com.netifi.broker.BrokerService;
 import java.net.InetSocketAddress;

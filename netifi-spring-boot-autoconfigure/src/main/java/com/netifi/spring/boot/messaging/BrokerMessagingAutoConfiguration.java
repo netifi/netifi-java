@@ -14,36 +14,31 @@
  *    limitations under the License.
  */
 
-package com.netifi.spring.boot;
+package com.netifi.spring.boot.messaging;
 
 import com.netifi.broker.BrokerService;
+import com.netifi.spring.boot.BrokerClientAutoConfiguration;
 import com.netifi.spring.messaging.BrokerClientRequesterMethodArgumentResolver;
 import com.netifi.spring.messaging.MessagingRSocketRequesterClientFactory;
-import com.netifi.spring.messaging.MessagingRouter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentracing.Tracer;
 import io.rsocket.AbstractRSocket;
 import io.rsocket.RSocket;
 import io.rsocket.RSocketFactory;
-import io.rsocket.ipc.MutableRouter;
 import io.rsocket.transport.netty.server.TcpServerTransport;
 import java.util.Optional;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.rsocket.RSocketProperties;
 import org.springframework.boot.autoconfigure.rsocket.RSocketStrategiesAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.rsocket.context.RSocketServerBootstrap;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.messaging.rsocket.RSocketStrategies;
 import org.springframework.messaging.rsocket.annotation.support.RSocketMessageHandler;
 import org.springframework.messaging.rsocket.annotation.support.RSocketRequesterMethodArgumentResolver;
-import org.springframework.util.MimeTypeUtils;
 
 /**
  * {@link EnableAutoConfiguration Auto-configuration} for Spring RSocket support in Spring
@@ -52,42 +47,23 @@ import org.springframework.util.MimeTypeUtils;
  * @author Oleh Dokuka
  * @since 1.7.0
  */
-@Configuration(proxyBeanMethods = false)
+@Configuration
 @ConditionalOnClass({RSocketRequester.class, RSocketFactory.class, TcpServerTransport.class})
 @AutoConfigureAfter({RSocketStrategiesAutoConfiguration.class, BrokerClientAutoConfiguration.class})
 @EnableConfigurationProperties(BrokerClientMessagingProperties.class)
-public class BrokerClientMessagingAutoConfiguration {
+public class BrokerMessagingAutoConfiguration {
 
   private static final RSocket STUB_RSOCKET = new AbstractRSocket() {};
 
   @Bean
-  public MutableRouter messagingCustomizer(
-      RSocketProperties rSocketProperties,
-      BrokerClientProperties brokerClientProperties,
-      BrokerClientMessagingProperties properties,
-      DefaultListableBeanFactory factory,
-      RSocketStrategies rSocketStrategies,
-      RSocketMessageHandler handler) {
-    return new MessagingRouter(
-        MimeTypeUtils.ALL,
-        MimeTypeUtils.ALL,
-        rSocketStrategies.metadataExtractor(),
-        handler,
-        rSocketStrategies.routeMatcher(),
-        rSocketStrategies);
-  }
-
-  @Bean
-  @ConditionalOnMissingBean
-  public RSocketServerBootstrap messageHandlerAcceptor(
-      BrokerClientMessagingProperties properties,
+  public NetifiBootstrap netifiBootstrap(
       DefaultListableBeanFactory factory,
       RSocketStrategies rSocketStrategies,
       RSocketMessageHandler handler,
-      BrokerService brokerClient,
+      BrokerService brokerService,
       Optional<MeterRegistry> registry,
       Optional<Tracer> tracer) {
-    RSocketServerBootstrap bootstrap = new NetifiBootstrap(brokerClient);
+    NetifiBootstrap bootstrap = new NetifiBootstrap(brokerService);
 
     handler
         .getArgumentResolverConfigurer()
@@ -98,7 +74,7 @@ public class BrokerClientMessagingAutoConfiguration {
         .getArgumentResolverConfigurer()
         .addCustomResolver(
             new BrokerClientRequesterMethodArgumentResolver(
-                brokerClient,
+                brokerService,
                 factory,
                 rSocketStrategies,
                 registry.orElse(null),

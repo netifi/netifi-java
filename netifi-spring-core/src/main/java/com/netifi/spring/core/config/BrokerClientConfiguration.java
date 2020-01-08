@@ -56,8 +56,8 @@ public class BrokerClientConfiguration implements ApplicationContextAware {
 
   @Bean
   public BrokerClientApplicationEventListener brokerClientApplicationEventListener(
-      RoutingBrokerService brokerClient) {
-    return new BrokerClientApplicationEventListener(brokerClient);
+      RoutingBrokerService<?> routingBrokerService) {
+    return new BrokerClientApplicationEventListener(routingBrokerService);
   }
 
   @Bean

@@ -66,12 +66,6 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
 
           @Override
           public Object getSuggestedValue(DependencyDescriptor descriptor) {
-            List<BrokerClientFactorySupport> brokerClientFactories =
-                new ArrayList<>(
-                    beanFactory.getBeansOfType(BrokerClientFactorySupport.class).values());
-
-            AnnotationAwareOrderComparator.sort(brokerClientFactories);
-
             BrokerClient annotation =
                 descriptor.getField() == null
                     ? AnnotatedElementUtils.getMergedAnnotation(
@@ -80,6 +74,12 @@ public class BrokerClientBeanDefinitionRegistryPostProcessor
                         descriptor.getAnnotatedElement(), BrokerClient.class);
 
             if (annotation != null) {
+              List<BrokerClientFactorySupport> brokerClientFactories =
+                  new ArrayList<>(
+                      beanFactory.getBeansOfType(BrokerClientFactorySupport.class).values());
+
+              AnnotationAwareOrderComparator.sort(brokerClientFactories);
+
               Class<?> descriptorDeclaredType = descriptor.getDeclaredType();
               String[] beanNamesForType = beanFactory.getBeanNamesForType(descriptorDeclaredType);
 

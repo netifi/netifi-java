@@ -13,14 +13,22 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.netifi.spring.core;
+package com.netifi.spring.boot;
 
-import com.netifi.common.tags.Tags;
-import com.netifi.spring.core.annotation.BrokerClient;
+import io.rsocket.ipc.Router;
+import io.rsocket.ipc.routing.SimpleRouter;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-public interface BrokerClientFactorySupport {
+@Configuration
+@AutoConfigureBefore(BrokerClientAutoConfiguration.class)
+public class DefaultRoutingAutoConfiguration {
 
-  boolean support(Class<?> clazz);
-
-  <T> T lookup(Class<T> tClass, BrokerClient.Type type, String group, Tags tag);
+  @Bean
+  @ConditionalOnMissingBean(Router.class)
+  public SimpleRouter mutableRouter() {
+    return new SimpleRouter();
+  }
 }
