@@ -21,6 +21,7 @@ import com.netifi.broker.discovery.StaticListDiscoveryConfig;
 import com.netifi.broker.discovery.StaticListDiscoveryStrategy;
 import com.netifi.broker.frames.DestinationSetupFlyweight;
 import com.netifi.broker.info.Broker;
+import com.netifi.broker.rsocket.ipc.decoders.UnwrappingDecoder;
 import com.netifi.broker.rsocket.transport.BrokerAddressSelectors;
 import com.netifi.common.net.HostAndPort;
 import com.netifi.common.tags.Tag;
@@ -881,7 +882,7 @@ public final class BrokerFactory {
 
     public RoutingBrokerService toRoutingService(MutableRouter router) {
       DefaultBrokerService brokerService =
-          (DefaultBrokerService) toService(new RoutingServerRSocket(router), true);
+          (DefaultBrokerService) toService(new RoutingServerRSocket(new UnwrappingDecoder(), router), false);
       return new DefaultRoutingBrokerService(router, brokerService);
     }
 
