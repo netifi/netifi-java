@@ -1,5 +1,5 @@
 /*
- *    Copyright 2019 The Netifi Authors
+ *    Copyright 2020 The Netifi Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -882,7 +882,8 @@ public final class BrokerFactory {
 
     public RoutingBrokerService toRoutingService(MutableRouter router) {
       DefaultBrokerService brokerService =
-          (DefaultBrokerService) toService(new RoutingServerRSocket(new UnwrappingDecoder(), router), false);
+          (DefaultBrokerService)
+              toService(new RoutingServerRSocket(new UnwrappingDecoder(), router), false);
       return new DefaultRoutingBrokerService(router, brokerService);
     }
 
