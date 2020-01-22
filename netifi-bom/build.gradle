@@ -44,6 +44,7 @@ dependencies {
     compile project(':netifi-spring-core')
     compile project(':netifi-spring-boot-autoconfigure')
     compile project(':netifi-spring-boot-starter')
+    compile project(':netifi-spring-messaging')
 }
 
 def customizePom(generatedPom, gradleProject) {

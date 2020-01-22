@@ -7,8 +7,8 @@ description = 'Netifi Spring Core'
 dependencies {
     compile project(":netifi-spring-core")
 
-    implementation "com.netifi:netifi-common"
-    implementation "com.netifi:netifi-broker-client"
+    compile project(':netifi-common')
+    compile project(':netifi-broker-client')
     implementation 'org.slf4j:slf4j-api'
     implementation 'org.springframework:spring-core'
     implementation 'org.springframework:spring-context'
