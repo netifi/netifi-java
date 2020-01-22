@@ -1,7 +1,7 @@
 buildscript {
-//    configurations.classpath {
-//        resolutionStrategy.activateDependencyLocking()
-//    }
+    configurations.classpath {
+        resolutionStrategy.activateDependencyLocking()
+    }
 }
 
 plugins {
@@ -26,20 +26,20 @@ if (details.branchName != null) {
         // Master should never have a suffix
     } else if (details.branchName == "develop") {
         versionSuffix = "-SNAPSHOT"
-        tmpUniqueVersion += "-${buildNumber}-SNAPSHOT"
+        tmpUniqueVersion += "-SNAPSHOT.${buildNumber}"
     } else if (details.branchName.startsWith("release")) {
-        versionSuffix = "-${buildNumber}-RC"
-        tmpUniqueVersion += "-${buildNumber}-RC"
+        versionSuffix = "-RC.${buildNumber}"
+        tmpUniqueVersion += "-RC.${buildNumber}"
     } else {
         versionSuffix = "-${details.branchName.replace("/", "-")}-SNAPSHOT"
-        tmpUniqueVersion += "-${details.branchName.replace("/", "-")}-${buildNumber}-SNAPSHOT"
+        tmpUniqueVersion += "-${details.branchName.replace("/", "-")}-SNAPSHOT.${buildNumber}"
     }
 }
 
 allprojects {
-//    dependencyLocking {
-//        lockAllConfigurations()
-//    }
+    dependencyLocking {
+        lockAllConfigurations()
+    }
     project.version += versionSuffix
     ext {
         uniqueVersion = "${tmpUniqueVersion}"
@@ -75,13 +75,6 @@ subprojects {
                 password = "${netifiReadOnlyPassword}"
             }
         }
-//        maven {
-//            url 'https://nexus.netifi.com/repository/netifi-oss/'
-//            credentials {
-//                username = "${netifiReadOnlyUsername}"
-//                password = "${netifiReadOnlyPassword}"
-//            }
-//        }
         maven {
             url 'https://nexus.netifi.com/repository/maven-releases/'
             credentials {

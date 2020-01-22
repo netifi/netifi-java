@@ -1,5 +1,5 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-com.netifi:netifi-broker-info-proto:1.6.11-SNAPSHOT
-com.netifi:netifi-httpgateway-proto:1.6.11-SNAPSHOT
+com.netifi:netifi-broker-info-proto:1.7.0-RC.1
+com.netifi:netifi-httpgateway-proto:1.7.0-RC.1

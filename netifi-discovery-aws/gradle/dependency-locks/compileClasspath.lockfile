@@ -1,10 +1,10 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-com.fasterxml.jackson.core:jackson-annotations:2.9.0
-com.fasterxml.jackson.core:jackson-core:2.9.8
-com.fasterxml.jackson.core:jackson-databind:2.9.8
-io.projectreactor:reactor-core:3.3.0.RELEASE
+com.fasterxml.jackson.core:jackson-annotations:2.10.1
+com.fasterxml.jackson.core:jackson-core:2.10.1
+com.fasterxml.jackson.core:jackson-databind:2.10.1
+io.projectreactor:reactor-core:3.3.1.RELEASE
 javax.inject:javax.inject:1
 org.reactivestreams:reactive-streams:1.0.3
 org.slf4j:slf4j-api:1.7.25
